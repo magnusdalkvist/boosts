@@ -1052,6 +1052,33 @@ input:focus-visible {
   margin-top: -5px;
 }
 
+.hint-card > span {
+  flex: 1;
+}
+
+.hint-card b {
+  font-weight: 500;
+}
+
+.hint-card.warn {
+  background: var(--warn-tonal);
+  color: var(--on-warn);
+}
+
+.hint-card.warn .ic,
+.hint-card.warn .btn {
+  color: var(--on-warn);
+}
+
+.hint-actions {
+  display: flex;
+  flex: none;
+}
+
+.body.fill > .hint-card {
+  margin-bottom: 12px;
+}
+
 /* banner, zap list ---------------------------------------------------------- */
 
 .banner {

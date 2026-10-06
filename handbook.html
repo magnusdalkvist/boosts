@@ -39,8 +39,8 @@
         <h2>Getting started</h2>
         <p>Open the panel on any page by clicking the toolbar icon or pressing <kbd>Alt</kbd>+<kbd>B</kbd>. Drag the header to move it, drag any edge or corner to resize it, and use the expand button (or double-click the header) for a large editing size.</p>
         <p>A <strong>boost</strong> is a bundle of HTML injections, CSS, a page script and zapped elements. Everything saves automatically. Your changes apply to the page as soon as you pause typing (about half a second), so the page doesn't redraw on every keystroke. <kbd>Ctrl</kbd>+<kbd>S</kbd> applies and saves right away. A boost on a page you haven't edited yet is a draft and isn't saved until you change something.</p>
-        <div class="callout">
-          <strong>Turn on “Allow User Scripts”.</strong> On <code>chrome://extensions</code>, open Boosts' details and turn it on. Without it, scripts fall back to a <code>&lt;script&gt;</code> tag, which sites with a strict Content Security Policy block. HTML, CSS and zaps work either way.
+        <div class="callout" id="user-scripts">
+          <strong>Turn on “Allow User Scripts”.</strong> On <code>chrome://extensions</code>, open Boosts' details and turn it on. Without it, scripts fall back to a <code>&lt;script&gt;</code> tag, which sites with a strict Content Security Policy (Gmail, GitHub, …) block. HTML, CSS and zaps work either way. While it's off, the panel shows a reminder next to every script field. The reminder goes away by itself once you turn the setting on and switch back to the tab.
         </div>
       </section>
 

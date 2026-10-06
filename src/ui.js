@@ -453,15 +453,26 @@
     toast("This site blocked the script. Turn on “Allow User Scripts” for Boosts.", "Open", openExtensionSettings);
   }
 
-  /** Shown above script editors while "Allow User Scripts" is off. */
-  const userScriptsBanner = () =>
+  /** Compact hint next to script editors while "Allow User Scripts" is off. */
+  const userScriptsHint = () =>
     h(
       "div",
-      { class: "banner" },
+      { class: "hint-card warn" },
       icon("warn"),
-      h("div", null, h("b", null, "Allow user scripts for full power"), h("p", null, "Without it, scripts can’t run on sites with a strict security policy, like Gmail. Turn on “Allow User Scripts” on the extension’s details page.")),
-      btn("text small", "openNew", "Open", openExtensionSettings),
+      h("span", null, "Scripts are blocked on strict sites like Gmail until ", h("b", null, "Allow User Scripts"), " is on for Boosts."),
+      h("div", { class: "hint-actions" }, btn("text small", null, "Turn on", openExtensionSettings), btn("text small", null, "Why", () => openHandbook("#user-scripts"))),
     );
+
+  /** Re-check the "Allow User Scripts" toggle; re-render if it changed. */
+  async function checkUserScripts() {
+    try {
+      const s = await chrome.runtime.sendMessage({ type: "status" });
+      const ok = !!s?.userScripts;
+      if (ok === userScriptsOk) return;
+      userScriptsOk = ok;
+      if (open && ui) renderBody();
+    } catch {}
+  }
 
   const openHandbook = (hash = "") => chrome.runtime.sendMessage({ type: "openHandbook", hash });
 
@@ -757,6 +768,9 @@
       if (menu && !e.composedPath().some((n) => n === menu || n === ui.switcher)) closeMenu();
     });
     ui.header.addEventListener("pointerdown", startDrag);
+    // Coming back from chrome://extensions after flipping "Allow User Scripts".
+    document.addEventListener("visibilitychange", () => document.visibilityState === "visible" && open && checkUserScripts());
+    addEventListener("focus", () => open && checkUserScripts());
     ui.header.addEventListener("dblclick", (e) => !e.target.closest("button, input") && toggleExpanded());
     renderExpand();
     addEventListener("scroll", redrawSoon, { capture: true, passive: true });
@@ -893,11 +907,7 @@
     ensureBoost();
     render();
     setMinimized(false);
-    chrome.runtime.sendMessage({ type: "status" }).then((s) => {
-      if (userScriptsOk === s?.userScripts) return;
-      userScriptsOk = !!s?.userScripts;
-      renderBody();
-    }).catch(() => {});
+    checkUserScripts();
   }
 
   function hide() {
@@ -1256,8 +1266,8 @@
         "div",
         { class: "group" },
         h("div", { class: "row" }, h("label", { class: "label" }, "Script"), h("span", { class: "grow" }), js.wrapButton(), formatBtn(js), btn("text small", "play", "Re-apply", runRule, { title: "Re-insert HTML and run the script (Ctrl+Enter)" })),
-        !userScriptsOk && userScriptsBanner(),
         js.el,
+        !userScriptsOk && userScriptsHint(),
       ),
       h(
         "div",
@@ -1323,8 +1333,8 @@
       onRun: run,
     });
     return [
-      !userScriptsOk && userScriptsBanner(),
       h("div", { class: "toolbar" }, btn("tonal", "play", "Run now", run), h("span", { class: "grow" }), h("span", { class: "hint" }, "Runs on every load · Ctrl+Enter"), ed.wrapButton(), formatBtn(ed)),
+      !userScriptsOk && userScriptsHint(),
       ed.el,
     ];
   }
