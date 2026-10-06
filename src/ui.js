@@ -33,6 +33,7 @@
     collapse: "M22 3.41 16.71 8.7 20 12h-8V4l3.29 3.29L20.59 2 22 3.41zM3.41 22l5.29-5.29L12 20v-8H4l3.29 3.29L2 20.59 3.41 22z",
     book: "M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z",
     link: "M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z",
+    wrap: "M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3 3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z",
     format: "M3 21h18v-2H3v2zm0-4h12v-2H3v2zm0-4h18v-2H3v2zm0-4h12V7H3v2zm0-6v2h18V3H3z",
   };
   const POSITIONS = [
@@ -50,12 +51,13 @@
   ];
   const PICK_EVENTS = ["pointerdown", "pointerup", "mousedown", "mouseup", "click", "dblclick", "auxclick", "contextmenu"];
   const LINE_H = 19;
+  const GROW_MAX = 18 * LINE_H + 20;
 
   // ---------------------------------------------------------------- state
 
   let host, shadow, ui;
   let open = false;
-  let prefs = { x: null, y: null, w: 400, h: 620, tab: "elements", minimized: false };
+  let prefs = { x: null, y: null, w: 400, h: 620, tab: "elements", minimized: false, wrap: true };
   let boost = null;
   let draft = false;
   let expanded = null;
@@ -298,13 +300,40 @@
     // The textarea and the highlighted copy share one grid cell and wrap
     // identically; the textarea never scrolls, the editor (or panel) does.
     const main = h("div", { class: "ed-main" }, pre, ta);
-    const el = h("div", { class: `ed${grow ? " ed-grow" : ""}` }, main);
-    if (grow) main.style.minHeight = `${minLines * LINE_H + 20}px`;
+    const minH = minLines * LINE_H + 20;
+    // Growing editors size to their content up to GROW_MAX, then scroll.
+    // Dragging the grab bar sets a height that sticks from then on.
+    let userSized = false;
+    const grip = grow && h("div", { class: "ed-grip", title: "Drag to resize", onpointerdown: startGrip });
+    const el = h("div", { class: `ed${grow ? " ed-grow" : ""}` }, main, grip);
+    if (grow) main.style.minHeight = `${minH}px`;
+
+    function fit() {
+      if (!grow || userSized || !main.isConnected) return;
+      const want = Math.min(pre.offsetHeight + (main.offsetHeight - main.clientHeight), GROW_MAX);
+      main.style.height = `${Math.max(want, minH)}px`;
+    }
+
+    function startGrip(e) {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      const startY = e.clientY;
+      const startH = main.offsetHeight;
+      grip.setPointerCapture(e.pointerId);
+      const move = (ev) => {
+        userSized = true;
+        main.style.height = `${Math.max(minH, startH + ev.clientY - startY)}px`;
+      };
+      grip.addEventListener("pointermove", move);
+      grip.addEventListener("pointerup", () => grip.removeEventListener("pointermove", move), { once: true });
+    }
 
     let keys = [];
     function paint() {
       keys = patchLines(pre, splitLines(highlight(lang, ta.value)), keys);
+      fit();
     }
+    if (grow) requestAnimationFrame(fit); // first paint happens before it's in the DOM
     // Repaint at most once per frame; typed text is invisible until painted,
     // so never wait longer than that.
     let paintFrame = 0;
@@ -319,7 +348,10 @@
     ta.addEventListener("keydown", (e) => {
       const mod = e.ctrlKey || e.metaKey;
       const { selectionStart: s, selectionEnd: t, value: v } = ta;
-      if (e.shiftKey && e.altKey && e.code === "KeyF") {
+      if (e.altKey && !e.shiftKey && !mod && e.code === "KeyZ") {
+        e.preventDefault();
+        toggleWrap();
+      } else if (e.shiftKey && e.altKey && e.code === "KeyF") {
         e.preventDefault();
         api.format();
       } else if (mod && e.key.toLowerCase() === "s") {
@@ -411,6 +443,24 @@
   const openHandbook = (hash = "") => chrome.runtime.sendMessage({ type: "openHandbook", hash });
 
   const formatBtn = (ed) => btn("text small", "format", "Format", () => ed.format(), { title: "Format code (Shift+Alt+F)" });
+
+  /** Word wrap is one setting for every editor, toggled from any of them. */
+  function toggleWrap() {
+    prefs.wrap = !prefs.wrap;
+    savePrefs();
+    applyWrap();
+  }
+
+  function applyWrap() {
+    ui.panel.classList.toggle("nowrap", !prefs.wrap);
+    for (const b of shadow.querySelectorAll(".wrap-toggle")) b.setAttribute("aria-pressed", String(prefs.wrap));
+  }
+
+  const wrapBtn = () => {
+    const b = iconBtn("wrap", "Word wrap (Alt+Z)", toggleWrap, "small wrap-toggle");
+    b.setAttribute("aria-pressed", String(prefs.wrap));
+    return b;
+  };
 
   // ---------------------------------------------------------------- boost editing
 
@@ -704,6 +754,7 @@
     ui.header.addEventListener("pointerdown", startDrag);
     ui.header.addEventListener("dblclick", (e) => !e.target.closest("button, input") && toggleExpanded());
     renderExpand();
+    applyWrap();
     addEventListener("scroll", redrawSoon, { capture: true, passive: true });
     addEventListener("resize", () => {
       applyGeometry();
@@ -1194,11 +1245,11 @@
         ),
       ),
       h("div", { class: "group" }, h("label", { class: "label" }, "Insert"), posSeg),
-      h("div", { class: "group" }, h("div", { class: "row" }, h("label", { class: "label" }, "HTML"), h("span", { class: "grow" }), formatBtn(html)), html.el, linkHint),
+      h("div", { class: "group" }, h("div", { class: "row" }, h("label", { class: "label" }, "HTML"), h("span", { class: "grow" }), wrapBtn(), formatBtn(html)), html.el, linkHint),
       h(
         "div",
         { class: "group" },
-        h("div", { class: "row" }, h("label", { class: "label" }, "Script"), h("span", { class: "grow" }), formatBtn(js), btn("text small", "play", "Re-apply", runRule, { title: "Re-insert HTML and run the script (Ctrl+Enter)" })),
+        h("div", { class: "row" }, h("label", { class: "label" }, "Script"), h("span", { class: "grow" }), wrapBtn(), formatBtn(js), btn("text small", "play", "Re-apply", runRule, { title: "Re-insert HTML and run the script (Ctrl+Enter)" })),
         !userScriptsOk && userScriptsBanner(),
         js.el,
       ),
@@ -1240,6 +1291,7 @@
         ),
         h("span", { class: "grow" }),
         h("span", { class: "hint" }, h("span", { class: "live-dot" }), "Live"),
+        wrapBtn(),
         formatBtn(ed),
       ),
       ed.el,
@@ -1264,7 +1316,7 @@
     });
     return [
       !userScriptsOk && userScriptsBanner(),
-      h("div", { class: "toolbar" }, btn("tonal", "play", "Run now", run), h("span", { class: "grow" }), h("span", { class: "hint" }, "Runs on every load · Ctrl+Enter"), formatBtn(ed)),
+      h("div", { class: "toolbar" }, btn("tonal", "play", "Run now", run), h("span", { class: "grow" }), h("span", { class: "hint" }, "Runs on every load · Ctrl+Enter"), wrapBtn(), formatBtn(ed)),
       ed.el,
     ];
   }

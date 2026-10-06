@@ -893,21 +893,82 @@ input:focus-visible {
 }
 
 .ln {
-  position: relative;
   min-height: 19px;
 }
 
+/* Line number: an inline-block pulled into the gutter and made sticky, so it
+   stays put while the code scrolls sideways (wrap off) and covers the code
+   scrolling underneath it. */
 .ln::before {
   content: counter(ln);
   counter-increment: ln;
-  position: absolute;
-  top: 0;
-  left: calc(-1 * var(--gutter));
-  width: calc(var(--gutter) - 14px);
-  color: var(--on-surface-3);
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  display: inline-block;
+  box-sizing: border-box;
+  width: calc(var(--gutter) - 7px);
+  height: 19px;
+  margin-left: calc(-1 * var(--gutter));
+  margin-right: 7px;
+  padding-right: 7px;
+  border-right: 1px solid var(--outline-soft);
+  background: var(--surface-1);
+  color: color-mix(in srgb, var(--on-surface-3) 80%, transparent);
   font-size: 11px;
+  line-height: 19px;
   text-align: right;
-  opacity: 0.75;
+  vertical-align: top;
+}
+
+/* Word wrap off: the column grows to the longest line and the editor scrolls
+   sideways; the textarea stretches with it so it never scrolls on its own. */
+.nowrap .ed-main {
+  grid-template-columns: minmax(max-content, 1fr);
+}
+
+.nowrap .ed-hl,
+.nowrap .ed-input {
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+/* HTML/script fields: grow with the code up to a cap, then scroll; the
+   bottom edge can be dragged to any height. */
+.ed-grow .ed-main {
+  flex: none; /* flex: 1 would ignore the height set by fit() */
+}
+
+.ed-grip {
+  position: relative;
+  flex: none;
+  height: 10px;
+  border-top: 1px solid var(--outline-soft);
+  background: var(--surface-1);
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.ed-grip::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  width: 28px;
+  height: 3px;
+  margin-left: -14px;
+  border-radius: 2px;
+  background: var(--outline);
+  transition: background 120ms;
+}
+
+.ed-grip:hover::after {
+  background: var(--primary);
+}
+
+.wrap-toggle[aria-pressed="true"] {
+  background: var(--tonal);
+  color: var(--on-tonal);
 }
 
 .ed-input {
