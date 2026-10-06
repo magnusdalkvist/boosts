@@ -7,6 +7,8 @@ or per page.
 Pick an element like in DevTools, inject markup around it, attach scripts, restyle the
 page, or zap distractions for good. It all happens in a floating panel on the page itself.
 
+![The Boosts panel injecting an "Unread" link with a live count into a webmail sidebar](docs/screenshots/panel-elements.png)
+
 ## Install
 
 1. Download `boosts-<version>.zip` from the [latest release](../../releases/latest) and unzip it
@@ -33,8 +35,16 @@ to move it, drag any edge to resize it, and use the expand button for a large ed
 - **Zap**: click things to hide them for good.
 - **Format** (Shift+Alt+F) pretty-prints any editor; **wrap** (Alt+Z) toggles word wrap per field.
 
+| Pick any element | Live CSS, in light or dark |
+| --- | --- |
+| ![Element picker highlighting a message row](docs/screenshots/element-picker.png) | ![CSS tab in dark mode](docs/screenshots/css-dark.png) |
+
 A boost applies to a whole site (host) or one page (host + path), and a site can have
 several. **All boosts** lists everything, with toggles and JSON import/export.
+
+![All boosts manager, grouped by site](docs/screenshots/all-boosts.png)
+
+<sub>Screenshots show a fictional demo app.</sub>
 
 The built-in **Handbook** (button in the panel footer) documents every feature, the
 element-script API, the `data-boost-*` attributes and how to work with strict sites like Gmail.

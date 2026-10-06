@@ -39,6 +39,7 @@ h1 {
   margin: 0;
   color: var(--on-surface-3);
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .grow {
@@ -46,6 +47,8 @@ h1 {
 }
 
 .search {
+  flex: 0 1 220px;
+  min-width: 120px;
   width: 220px;
   height: 40px;
   padding: 0 16px;
