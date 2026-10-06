@@ -64,7 +64,7 @@
   let hl = { targets: [], tone: "pick", label: false };
   let menu = null;
   let userScriptsOk = true;
-  let statusTimer, prefsTimer, toastTimer;
+  let prefsTimer, toastTimer;
   const counters = new Map(); // ruleId -> refresh fn
 
   // ---------------------------------------------------------------- tiny DOM kit
@@ -227,22 +227,45 @@
     return globalThis.beautifier[lang](src, FORMAT_OPTIONS[lang]);
   }
 
-  /** Split highlight tokens into one block per source line, so long lines can
+  /** Split highlight tokens into per-line token lists, so long lines can
       soft-wrap and each line carries its own (CSS-counter) line number. */
-  function renderLines(tokens) {
-    const lines = [];
-    let line = h("div", { class: "ln" });
+  function splitLines(tokens) {
+    const lines = [[]];
     for (const [cls, text] of tokens) {
       text.split("\n").forEach((part, i) => {
-        if (i) {
-          lines.push(line);
-          line = h("div", { class: "ln" });
-        }
-        if (part) line.append(cls ? h("span", { class: `t-${cls}` }, part) : part);
+        if (i) lines.push([]);
+        if (part) lines.at(-1).push([cls, part]);
       });
     }
-    lines.push(line);
     return lines;
+  }
+
+  const lineKey = (tokens) => tokens.map(([cls, text]) => `${cls}\u0001${text}`).join("\u0002");
+
+  function lineEl(tokens) {
+    return h("div", { class: "ln" }, tokens.map(([cls, text]) => (cls ? h("span", { class: `t-${cls}` }, text) : text)));
+  }
+
+  /** Re-render only the lines that changed since the last paint (usually one). */
+  function patchLines(pre, lines, prevKeys) {
+    const keys = lines.map(lineKey);
+    let start = 0;
+    while (start < keys.length && start < prevKeys.length && keys[start] === prevKeys[start]) start++;
+    let endOld = prevKeys.length;
+    let endNew = keys.length;
+    while (endOld > start && endNew > start && keys[endNew - 1] === prevKeys[endOld - 1]) endOld--, endNew--;
+    const kids = pre.children;
+    for (let i = endOld - 1; i >= start; i--) kids[i].remove();
+    const before = kids[start] || null;
+    const fresh = lines.slice(start, endNew).map(lineEl);
+    if (fresh.length) pre.insertBefore(frag(fresh), before);
+    return keys;
+  }
+
+  function frag(nodes) {
+    const f = document.createDocumentFragment();
+    f.append(...nodes);
+    return f;
   }
 
   // ---------------------------------------------------------------- code editor
@@ -273,11 +296,19 @@
     const el = h("div", { class: `ed${grow ? " ed-grow" : ""}` }, main);
     if (grow) main.style.minHeight = `${minLines * LINE_H + 20}px`;
 
+    let keys = [];
     function paint() {
-      pre.replaceChildren(...renderLines(highlight(lang, ta.value)));
+      keys = patchLines(pre, splitLines(highlight(lang, ta.value)), keys);
     }
+    // Repaint at most once per frame; typed text is invisible until painted,
+    // so never wait longer than that.
+    let paintFrame = 0;
     ta.addEventListener("input", () => {
-      paint();
+      if (!paintFrame)
+        paintFrame = requestAnimationFrame(() => {
+          paintFrame = 0;
+          paint();
+        });
       onChange?.(ta.value);
     });
     ta.addEventListener("keydown", (e) => {
@@ -379,18 +410,24 @@
     expanded = null;
   }
 
-  function edit(fn, { rerender = false } = {}) {
+  /**
+   * Apply an edit. Keystroke edits only touch the boost object; core applies
+   * them to the page after a pause and emits "applied"/"saved", which refresh
+   * the counters and status. Structural edits (`rerender`) apply immediately.
+   */
+  function edit(fn, { rerender = false, now = false } = {}) {
     fn?.(boost);
     draft = false;
-    B.update(boost);
+    B.update(boost, { now: rerender || now });
     setStatus("Saving…");
-    clearTimeout(statusTimer);
-    statusTimer = setTimeout(() => setStatus("Saved"), 500);
     if (rerender) render();
-    else {
-      refreshCounts();
-      renderTabs();
-    }
+    else renderTabsIfChanged();
+  }
+
+  let tabsKey = "";
+  function renderTabsIfChanged() {
+    const key = `${boost.rules.length}|${boost.zaps.length}|${!!boost.css.trim()}|${!!boost.js.trim()}`;
+    if (key !== tabsKey) renderTabs();
   }
 
   function setStatus(text) {
@@ -884,7 +921,7 @@
     renderTabs();
     renderBody();
     renderPickBar();
-    setStatus("Saved");
+    setStatus(B.dirty() ? "Saving…" : "Saved");
   }
 
   function renderScope() {
@@ -909,12 +946,13 @@
         h("span", null, detail),
       );
     ui.scope.replaceChildren(
-      h("span", { class: "scope-label" }, "Applies to"),
-      h("div", { class: "segmented" }, seg("site", "Whole site", location.host), seg("page", "This page", B.normPath(location.pathname))),
+      h("span", { class: "scope-label", id: "scope-label" }, "Applies to"),
+      h("div", { class: "segmented", role: "group", "aria-labelledby": "scope-label" }, seg("site", "Whole site", location.host), seg("page", "This page", B.normPath(location.pathname))),
     );
   }
 
   function renderTabs() {
+    tabsKey = `${boost.rules.length}|${boost.zaps.length}|${!!boost.css.trim()}|${!!boost.js.trim()}`;
     const counts = { elements: boost.rules.length, zap: boost.zaps.length, css: boost.css.trim() ? "•" : 0, js: boost.js.trim() ? "•" : 0 };
     ui.tabs.replaceChildren(
       ...TABS.map(([id, label, ic]) =>
@@ -1058,7 +1096,7 @@
             type: "button",
             title: { before: "Insert before the element", prepend: "Insert inside, at the start", append: "Insert inside, at the end", after: "Insert after the element", replace: "Hide the element and insert in its place" }[p],
             onclick: (e) => {
-              edit(() => (r.position = p));
+              edit(() => (r.position = p), { now: true });
               chip.textContent = label;
               for (const s of posSeg.children) s.classList.toggle("on", s === e.currentTarget);
             },
@@ -1074,7 +1112,8 @@
       placeholder: '<div class="note">Hello from Boosts 👋</div>',
       onChange: (v) => {
         edit(() => (r.html = v));
-        updateLinkHint();
+        clearTimeout(hintTimer);
+        hintTimer = setTimeout(updateLinkHint, 400);
       },
     });
     // Links without data-boost-link do nothing on sites that cancel link clicks
@@ -1086,6 +1125,7 @@
       h("span", null, "Link does nothing when clicked? Some sites block clicks on links they didn’t create. Add ", h("code", null, "data-boost-link"), " to the ", h("code", null, "<a>"), " or handle it in the script."),
       btn("text small", null, "How", () => openHandbook("#attr-link")),
     );
+    let hintTimer;
     const updateLinkHint = () => {
       const tpl = document.createElement("template");
       try {
@@ -1246,7 +1286,7 @@
       multi: true,
       onPick: (el) => {
         const selector = cssPath(el);
-        if (!boost.zaps.some((z) => z.selector === selector)) edit((b) => b.zaps.push({ id: B.uid(), selector }));
+        if (!boost.zaps.some((z) => z.selector === selector)) edit((b) => b.zaps.push({ id: B.uid(), selector }), { now: true });
         renderTabs();
         renderBody();
       },
@@ -1276,6 +1316,8 @@
 
   B.on((type) => {
     if (!open) return;
+    if (type === "applied") return refreshCounts();
+    if (type === "saved") return !B.dirty() && setStatus("Saved");
     if (type === "nav" || (boost && !B.get(boost.id) && !draft)) {
       ensureBoost();
       return render();

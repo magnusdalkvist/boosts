@@ -84,6 +84,8 @@
 
 .panel {
   position: fixed;
+  /* Keep the panel's own restyle/relayout (every keystroke) from involving the page. */
+  contain: layout paint style;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -394,15 +396,16 @@ input:focus-visible {
 
 .scope {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 2px 14px 10px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 14px 12px;
 }
 
 .scope-label {
-  flex: none;
-  color: var(--on-surface-3);
-  font-size: 12px;
+  padding-left: 2px;
+  color: var(--on-surface-2);
+  font: 500 11.5px/16px var(--font);
+  letter-spacing: 0.02em;
 }
 
 .segmented {

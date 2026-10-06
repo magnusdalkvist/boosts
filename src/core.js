@@ -8,7 +8,10 @@
 
   const B = (globalThis.__boosts = {});
   const PREFIX = "boost:";
-  const SAVE_DELAY = 350;
+  // While typing, re-applying to the page (DOM work, heavy on big apps like
+  // Gmail) waits for a short pause, and storage writes for a longer one.
+  const APPLY_DELAY = 600;
+  const SAVE_DELAY = 1500;
 
   /** id -> boost, as stored (or as last edited in this tab). */
   const all = new Map();
@@ -79,28 +82,44 @@
   B.list = () => [...all.values()];
   B.forPage = () => B.list().filter((b) => B.matches(b)).sort((a, b) => a.createdAt - b.createdAt);
 
-  /** Apply an edited boost right away; persist it shortly after. */
-  B.update = (b) => {
+  let applyTimer = 0;
+
+  function applyNow() {
+    clearTimeout(applyTimer);
+    applyTimer = 0;
+    reconcile({ runJs: false });
+    emit("applied");
+  }
+
+  function save(id) {
+    clearTimeout(pendingSaves.get(id));
+    pendingSaves.delete(id);
+    const b = all.get(id);
+    if (b) chrome.storage.local.set({ [PREFIX + id]: b }).then(() => !pendingSaves.size && emit("saved"));
+  }
+
+  /**
+   * Record an edit. It reaches the page after a short pause in typing (or right
+   * away with `now`, for structural changes) and storage after a longer one.
+   */
+  B.update = (b, { now = false } = {}) => {
     b.updatedAt = Date.now();
     all.set(b.id, b);
-    reconcile({ runJs: false });
+    if (now) applyNow();
+    else {
+      clearTimeout(applyTimer);
+      applyTimer = setTimeout(applyNow, APPLY_DELAY);
+    }
     clearTimeout(pendingSaves.get(b.id));
-    pendingSaves.set(
-      b.id,
-      setTimeout(() => {
-        pendingSaves.delete(b.id);
-        chrome.storage.local.set({ [PREFIX + b.id]: b });
-      }, SAVE_DELAY),
-    );
+    pendingSaves.set(b.id, setTimeout(() => save(b.id), SAVE_DELAY));
   };
 
+  B.dirty = () => !!applyTimer || pendingSaves.size > 0;
+
+  /** Apply and persist any pending edits immediately. */
   B.flush = () => {
-    for (const [id, t] of pendingSaves) {
-      clearTimeout(t);
-      const b = all.get(id);
-      if (b) chrome.storage.local.set({ [PREFIX + id]: b });
-    }
-    pendingSaves.clear();
+    if (applyTimer) applyNow();
+    for (const id of [...pendingSaves.keys()]) save(id);
   };
 
   B.remove = (id) => {
@@ -293,7 +312,8 @@
         href = location.href;
         reconcile({ runJs: true });
         emit("nav");
-      } else if (active.size) {
+      } else if (active.size && !applyTimer) {
+        // Skipped while an edit is pending: it would apply half-typed changes.
         for (const st of active.values()) applyBoost(st.boost, true);
       }
     }, 80);

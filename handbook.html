@@ -38,7 +38,7 @@
       <section id="start">
         <h2>Getting started</h2>
         <p>Open the panel on any page by clicking the toolbar icon or pressing <kbd>Alt</kbd>+<kbd>B</kbd>. Drag the header to move it, drag any edge or corner to resize it, and use the expand button (or double-click the header) for a large editing size.</p>
-        <p>A <strong>boost</strong> is a bundle of HTML injections, CSS, a page script and zapped elements. Everything saves automatically as you type and applies to the page live. A boost on a page you haven't edited yet is a draft and isn't saved until you change something.</p>
+        <p>A <strong>boost</strong> is a bundle of HTML injections, CSS, a page script and zapped elements. Everything saves automatically. Your changes apply to the page as soon as you pause typing (about half a second), so the page doesn't redraw on every keystroke. <kbd>Ctrl</kbd>+<kbd>S</kbd> applies and saves right away. A boost on a page you haven't edited yet is a draft and isn't saved until you change something.</p>
         <div class="callout">
           <strong>Turn on “Allow User Scripts”.</strong> On <code>chrome://extensions</code>, open Boosts' details and turn it on. Without it, scripts fall back to a <code>&lt;script&gt;</code> tag, which sites with a strict Content Security Policy block. HTML, CSS and zaps work either way.
         </div>
@@ -97,7 +97,7 @@ nodes[0].addEventListener("click", () =&gt; {
 
       <section id="css">
         <h2>CSS</h2>
-        <p>Applied live as you type. Your CSS is added as a separate stylesheet after all of the page's own stylesheets, so for equally specific selectors your rules win. The page's Content Security Policy can't block it, and it's in place before the first paint, so there's no flash on load.</p>
+        <p>Applied live, as soon as you pause typing. Your CSS is added as a separate stylesheet after all of the page's own stylesheets, so for equally specific selectors your rules win. The page's Content Security Policy can't block it, and it's in place before the first paint, so there's no flash on load.</p>
         <p><strong>Pick selector</strong> adds an empty rule for any element you click. Inline styles and high-specificity rules on the page may still need <code>!important</code>.</p>
         <p>Style your own injected markup with the <a href="#attr-node"><code>data-boost-node</code></a> attribute, or give it your own classes.</p>
       </section>
@@ -182,7 +182,7 @@ el.textContent = el.textContent.replace("Inbox", "📥 Inbox");</code></pre>
         <table>
           <tbody>
             <tr><td><kbd>Alt</kbd>+<kbd>B</kbd></td><td>Open / close the panel (change it at <code>chrome://extensions/shortcuts</code>)</td></tr>
-            <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Save right away (saving is automatic anyway)</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Apply and save right away (both happen automatically when you pause)</td></tr>
             <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Run the page script / re-apply an injection</td></tr>
             <tr><td><kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>F</kbd></td><td>Format the editor's contents</td></tr>
             <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>Indent / outdent the selected lines</td></tr>
