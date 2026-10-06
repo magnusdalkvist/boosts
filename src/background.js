@@ -101,6 +101,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       chrome.action.setBadgeBackgroundColor({ tabId, color: "#0b57d0" });
       chrome.action.setBadgeTextColor?.({ tabId, color: "#ffffff" });
       return;
+    case "loadFormatter":
+      // js-beautify is ~100 KB, so it's only injected (into the content-script world) on first use.
+      if (!tabId) return;
+      chrome.scripting
+        .executeScript({ target: { tabId, frameIds: [0] }, files: ["lib/beautifier.min.js"] })
+        .then(() => sendResponse({ ok: true }), (e) => sendResponse({ ok: false, error: String(e?.message || e) }));
+      return true;
     case "status":
       sendResponse({ userScripts: userScriptsEnabled() });
       return;

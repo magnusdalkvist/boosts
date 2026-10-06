@@ -29,6 +29,7 @@
     openNew: "M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z",
     layers: "M11.99 18.54 4.62 12.81 3 14.07l9 7 9-7-1.63-1.27zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z",
     warn: "M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z",
+    format: "M3 21h18v-2H3v2zm0-4h12v-2H3v2zm0-4h18v-2H3v2zm0-4h12V7H3v2zm0-6v2h18V3H3z",
   };
   const POSITIONS = [
     ["before", "Before"],
@@ -206,6 +207,22 @@
     return out;
   }
 
+  // ---------------------------------------------------------------- formatting
+
+  const FORMAT_OPTIONS = {
+    html: { indent_size: 2, wrap_line_length: 80, wrap_attributes: "auto", extra_liners: [], end_with_newline: false },
+    css: { indent_size: 2, end_with_newline: false },
+    js: { indent_size: 2, end_with_newline: false },
+  };
+
+  async function formatCode(lang, src) {
+    if (!globalThis.beautifier) {
+      const res = await chrome.runtime.sendMessage({ type: "loadFormatter" });
+      if (!res?.ok || !globalThis.beautifier) throw new Error(res?.error || "Formatter failed to load");
+    }
+    return globalThis.beautifier[lang](src, FORMAT_OPTIONS[lang]);
+  }
+
   // ---------------------------------------------------------------- code editor
 
   function insertText(ta, text) {
@@ -255,7 +272,10 @@
     ta.addEventListener("keydown", (e) => {
       const mod = e.ctrlKey || e.metaKey;
       const { selectionStart: s, selectionEnd: t, value: v } = ta;
-      if (mod && e.key.toLowerCase() === "s") {
+      if (e.shiftKey && e.altKey && e.code === "KeyF") {
+        e.preventDefault();
+        api.format();
+      } else if (mod && e.key.toLowerCase() === "s") {
         e.preventDefault();
         B.flush();
         toast("Saved");
@@ -289,9 +309,25 @@
     });
 
     paint();
-    return {
+    const api = {
       el,
       ta,
+      /** Pretty-print in place; goes through insertText so Ctrl+Z undoes it. */
+      async format() {
+        if (!ta.value.trim()) return;
+        let out;
+        try {
+          out = await formatCode(lang, ta.value);
+        } catch (e) {
+          return toast(`Couldn’t format: ${e.message}`);
+        }
+        if (out === ta.value) return;
+        ta.focus();
+        ta.select();
+        insertText(ta, out);
+        ta.setSelectionRange(0, 0);
+        ta.scrollTop = 0;
+      },
       get value() {
         return ta.value;
       },
@@ -306,7 +342,10 @@
       },
       focus: () => ta.focus(),
     };
+    return api;
   }
+
+  const formatBtn = (ed) => btn("text small", "format", "Format", () => ed.format(), { title: "Format code (Shift+Alt+F)" });
 
   // ---------------------------------------------------------------- boost editing
 
@@ -1008,11 +1047,11 @@
         ),
       ),
       h("div", { class: "group" }, h("label", { class: "label" }, "Insert"), posSeg),
-      h("div", { class: "group" }, h("label", { class: "label" }, "HTML"), html.el),
+      h("div", { class: "group" }, h("div", { class: "row" }, h("label", { class: "label" }, "HTML"), h("span", { class: "grow" }), formatBtn(html)), html.el),
       h(
         "div",
         { class: "group" },
-        h("div", { class: "row" }, h("label", { class: "label" }, "Script"), h("span", { class: "grow" }), btn("text small", "play", "Re-apply", runRule, { title: "Re-insert HTML and run the script (Ctrl+Enter)" })),
+        h("div", { class: "row" }, h("label", { class: "label" }, "Script"), h("span", { class: "grow" }), formatBtn(js), btn("text small", "play", "Re-apply", runRule, { title: "Re-insert HTML and run the script (Ctrl+Enter)" })),
         js.el,
       ),
       h(
@@ -1053,6 +1092,7 @@
         ),
         h("span", { class: "grow" }),
         h("span", { class: "hint" }, h("span", { class: "live-dot" }), "Live"),
+        formatBtn(ed),
       ),
       ed.el,
     ];
@@ -1082,7 +1122,7 @@
           h("div", null, h("b", null, "Allow user scripts for full power"), h("p", null, "Without it, scripts can’t run on sites with a strict Content Security Policy. Turn on “Allow User Scripts” on the extension’s details page.")),
           btn("text small", "openNew", "Open", () => chrome.runtime.sendMessage({ type: "openExtensionSettings" })),
         ),
-      h("div", { class: "toolbar" }, btn("tonal", "play", "Run now", run), h("span", { class: "grow" }), h("span", { class: "hint" }, "Runs on every load · Ctrl+Enter")),
+      h("div", { class: "toolbar" }, btn("tonal", "play", "Run now", run), h("span", { class: "grow" }), h("span", { class: "hint" }, "Runs on every load · Ctrl+Enter"), formatBtn(ed)),
       ed.el,
     ];
   }

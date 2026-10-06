@@ -22,6 +22,9 @@ Click the toolbar icon or press **Alt+B** on any page to open the floating panel
 - **CSS**: applied live, cascades after the page's own styles. *Pick selector* drops
   a rule for any element you click.
 - **Script**: runs in the page once the DOM is ready, on every load. Ctrl+Enter runs it now.
+- **Format** (or Shift+Alt+F in any editor) pretty-prints HTML, CSS and JS with
+  [js-beautify](https://github.com/beautifier/js-beautify) (vendored in `lib/`, MIT, loaded on
+  first use). Ctrl+Z undoes it.
 - **Zap**: click things to hide them for good (right-click → *Zap this element* works too).
 
 While picking: arrow keys move through the tree, Enter chooses, Esc stops.
