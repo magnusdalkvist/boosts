@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Boosts Handbook</title>
+    <link rel="icon" href="icons/icon-32.png" />
+    <link rel="stylesheet" href="styles/tokens.css" />
+    <link rel="stylesheet" href="styles/handbook.css" />
+  </head>
+  <body>
+    <aside class="toc">
+      <a class="brand" href="#top"><img src="icons/icon-48.png" alt="" /><span>Boosts Handbook</span></a>
+      <nav>
+        <p>Basics</p>
+        <a href="#start">Getting started</a>
+        <a href="#scope">Site, page &amp; multiple boosts</a>
+        <p>Features</p>
+        <a href="#elements">Elements</a>
+        <a href="#element-scripts">Element scripts</a>
+        <a href="#css">CSS</a>
+        <a href="#page-scripts">Page scripts</a>
+        <a href="#zap">Zap</a>
+        <p>Reference</p>
+        <a href="#attributes">Attributes</a>
+        <a href="#recipes">Recipes</a>
+        <a href="#shortcuts">Keyboard shortcuts</a>
+        <a href="#troubleshooting">Troubleshooting</a>
+      </nav>
+    </aside>
+
+    <main id="top">
+      <header class="hero">
+        <h1>Boosts Handbook</h1>
+        <p>Everything Boosts can do, and every <code>data-boost-*</code> attribute you can use in your own markup.</p>
+      </header>
+
+      <section id="start">
+        <h2>Getting started</h2>
+        <p>Open the panel on any page by clicking the toolbar icon or pressing <kbd>Alt</kbd>+<kbd>B</kbd>. Drag the header to move it, drag any edge or corner to resize it, and use the expand button (or double-click the header) for a large editing size.</p>
+        <p>A <strong>boost</strong> is a bundle of HTML injections, CSS, a page script and zapped elements. Everything saves automatically as you type and applies to the page live. A boost on a page you haven't edited yet is a draft and isn't saved until you change something.</p>
+        <div class="callout">
+          <strong>Turn on “Allow User Scripts”.</strong> On <code>chrome://extensions</code>, open Boosts' details and turn it on. Without it, scripts fall back to a <code>&lt;script&gt;</code> tag, which sites with a strict Content Security Policy block. HTML, CSS and zaps work either way.
+        </div>
+      </section>
+
+      <section id="scope">
+        <h2>Site, page &amp; multiple boosts</h2>
+        <p><strong>Applies to</strong> controls where a boost runs:</p>
+        <ul>
+          <li><strong>Whole site</strong>: every page on the same host, e.g. <code>mail.google.com</code>. Subdomains are separate sites.</li>
+          <li><strong>This page</strong>: only this host and path, e.g. <code>/mail/u/0</code>. The part after <code>?</code> or <code>#</code> is ignored.</li>
+        </ul>
+        <p>A site can have several boosts. Open the menu under the boost name to switch between them, create a new one, or delete the current one. The switch in the header turns the current boost on or off. <strong>All boosts</strong> lists every boost you have, with toggles, search, delete and JSON import/export.</p>
+      </section>
+
+      <section id="elements">
+        <h2>Elements</h2>
+        <p>Click <strong>Select element</strong> (or right-click anything → <em>Boost this element</em>) and pick an element on the page. While picking:</p>
+        <ul>
+          <li><kbd>↑</kbd> / <kbd>↓</kbd> move to the parent / first child, <kbd>←</kbd> / <kbd>→</kbd> to the siblings.</li>
+          <li><kbd>Enter</kbd> or a click chooses, <kbd>Esc</kbd> stops.</li>
+        </ul>
+        <p>Then write HTML and choose where it goes relative to the target:</p>
+        <table>
+          <thead><tr><th>Insert</th><th>Where the HTML goes</th></tr></thead>
+          <tbody>
+            <tr><td>Before</td><td>Right before the element, as a sibling.</td></tr>
+            <tr><td>Start</td><td>Inside the element, before its first child.</td></tr>
+            <tr><td>End</td><td>Inside the element, after its last child.</td></tr>
+            <tr><td>After</td><td>Right after the element, as a sibling.</td></tr>
+            <tr><td>Replace</td><td>The element is hidden (<code>display: none</code>, not removed) and the HTML goes in its place.</td></tr>
+          </tbody>
+        </table>
+        <p>The <strong>Target</strong> is a CSS selector, and the injection applies to every element it matches. The counter shows how many matches there are. <em>All similar</em> drops the trailing <code>:nth-child()</code> so one injection covers every sibling like the one you picked. If the page re-renders or a single-page app adds matching elements later, Boosts injects into them too.</p>
+        <p><code>&lt;script&gt;</code> tags inside injected HTML don't run. Put code in the injection's script instead.</p>
+        <p><strong>Format</strong> (or <kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>F</kbd>) pretty-prints the editor's contents. <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes it.</p>
+      </section>
+
+      <section id="element-scripts">
+        <h2>Element scripts</h2>
+        <p>Each injection can carry a script. It runs in the page's own JavaScript context, so it can see the page's globals, once for every element the selector matches. Two variables are provided:</p>
+        <table>
+          <thead><tr><th>Name</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td><code>el</code></td><td>The matched target element. Also available as <code>this</code>.</td></tr>
+            <tr><td><code>nodes</code></td><td>An array of the top-level elements your HTML inserted next to/inside this target.</td></tr>
+          </tbody>
+        </table>
+        <pre><code>// Collapse the target when the injected button is clicked
+nodes[0].addEventListener("click", () =&gt; {
+  el.hidden = !el.hidden;
+});</code></pre>
+        <p>The script is wrapped in an <code>async</code> function, so <code>await</code> works. Errors go to the page console, prefixed with <code>[Boosts]</code> and the boost name.</p>
+        <p><strong>When it runs:</strong> on page load, whenever a new matching element appears, and when you press <strong>Re-apply</strong> (<kbd>Ctrl</kbd>+<kbd>Enter</kbd>). Editing the HTML re-inserts it live but doesn't re-run the script, because it would run on every keystroke. Press Re-apply when you're ready.</p>
+      </section>
+
+      <section id="css">
+        <h2>CSS</h2>
+        <p>Applied live as you type. Your CSS is added as a separate stylesheet after all of the page's own stylesheets, so for equally specific selectors your rules win. The page's Content Security Policy can't block it, and it's in place before the first paint, so there's no flash on load.</p>
+        <p><strong>Pick selector</strong> adds an empty rule for any element you click. Inline styles and high-specificity rules on the page may still need <code>!important</code>.</p>
+        <p>Style your own injected markup with the <a href="#attr-node"><code>data-boost-node</code></a> attribute, or give it your own classes.</p>
+      </section>
+
+      <section id="page-scripts">
+        <h2>Page scripts</h2>
+        <p>The Script tab runs once per page load, after the DOM is ready, in the page's own JavaScript context. <strong>Run now</strong> (<kbd>Ctrl</kbd>+<kbd>Enter</kbd>) runs it immediately.</p>
+        <p>Single-page apps like Gmail change views without a page load, so the page script doesn't run again. Listen for navigation yourself if you need to:</p>
+        <pre><code>navigation.addEventListener("navigatesuccess", () =&gt; {
+  console.log("Now on", location.hash);
+});</code></pre>
+      </section>
+
+      <section id="zap">
+        <h2>Zap</h2>
+        <p>Click <strong>Zap elements</strong> and click anything you never want to see again. Keep clicking to zap more, and press <kbd>Esc</kbd> or <em>Done zapping</em> to stop. You can also right-click an element → <em>Zap this element</em>. Zapped elements are hidden with CSS, so they never flash on load. The eye button shows an element again.</p>
+      </section>
+
+      <section id="attributes">
+        <h2>Attributes</h2>
+        <p>Boosts reads and writes a few <code>data-boost-*</code> attributes. The first group is for you to put in your injected HTML. The second is set by Boosts, and you can use it from CSS and scripts but shouldn't write it yourself.</p>
+
+        <h3>You add</h3>
+        <article class="attr" id="attr-link">
+          <header><code>data-boost-link</code><span class="where">on an <code>&lt;a&gt;</code>, or any element wrapping links, in injected HTML</span></header>
+          <p>Makes an injected link work even on sites that block clicks on links they didn't create. Gmail is the common case: you see the URL in the status bar on hover, but clicking does nothing.</p>
+          <p>With the attribute, Boosts lets the click go through the page first. If the page cancelled it, Boosts follows the link itself: in the same tab for a normal click, in a new tab for a middle-click, <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+click or <code>target="_blank"</code>.</p>
+          <pre><code>&lt;a data-boost-link href="https://mail.google.com/mail/u/0/#search/label%3Aunread"&gt;Unread&lt;/a&gt;</code></pre>
+          <p>Put it on a wrapper to cover every link inside:</p>
+          <pre><code>&lt;nav data-boost-link&gt;
+  &lt;a href="#inbox"&gt;Inbox&lt;/a&gt;
+  &lt;a href="#search/label%3Aunread"&gt;Unread&lt;/a&gt;
+&lt;/nav&gt;</code></pre>
+          <p>Prefer code? This element script does the same for every link in the injection. It's less robust, because it only runs if the page doesn't also stop the click from reaching the link:</p>
+          <pre><code>for (const a of nodes.flatMap((n) =&gt; [n, ...n.querySelectorAll("a[href]")])) {
+  if (!a.matches("a[href]")) continue;
+  a.addEventListener("click", (e) =&gt; {
+    e.preventDefault();
+    location.href = a.href;
+  });
+}</code></pre>
+          <p>Leave both out if your own script handles the link's clicks. The panel shows a reminder under the HTML editor when your HTML has a link without the attribute.</p>
+        </article>
+
+        <h3>Boosts adds</h3>
+        <article class="attr" id="attr-node">
+          <header><code>data-boost-node</code><span class="where">on every top-level element you inject</span></header>
+          <p>Marks markup that Boosts inserted. Selectors never match inside it, so an injection can't inject into itself. Use it to style your markup without touching the page's own elements:</p>
+          <pre><code>[data-boost-node] {
+  font: 500 13px system-ui;
+}</code></pre>
+          <p>The value is an internal token that changes every time the HTML is re-inserted. Match on the attribute's presence, not its value.</p>
+        </article>
+        <article class="attr" id="attr-el">
+          <header><code>data-boost-el</code><span class="where">on each element an injection targets</span></header>
+          <p>Holds space-separated tokens for the injections attached to the element. Boosts uses it to hand the right element to your script as <code>el</code>. It's handy for spotting targets in DevTools. Don't edit or remove it.</p>
+        </article>
+        <p class="note">New attributes will be documented here as they're added.</p>
+      </section>
+
+      <section id="recipes">
+        <h2>Recipes</h2>
+        <h3>Add a shortcut link to Gmail's sidebar</h3>
+        <p>Pick a sidebar entry, set Insert to <em>After</em>, and use a link with <a href="#attr-link"><code>data-boost-link</code></a>:</p>
+        <pre><code>&lt;a data-boost-link class="my-unread" href="#search/label%3Aunread"&gt;Unread&lt;/a&gt;</code></pre>
+        <p>Then style it on the CSS tab:</p>
+        <pre><code>.my-unread {
+  display: block;
+  padding: 4px 26px;
+  color: inherit;
+  text-decoration: none;
+}</code></pre>
+        <h3>Copy an element from DevTools</h3>
+        <p>Right-click an element in DevTools → <em>Copy</em> → <em>Copy outerHTML</em>, paste it into the HTML editor, and press <strong>Format</strong>. Copied markup often carries the site's own event attributes, like <code>jsaction</code> in Gmail. They do nothing on a copy, so delete them to keep things readable.</p>
+        <h3>Replace text on the page</h3>
+        <pre><code>// Element script on the target
+el.textContent = el.textContent.replace("Inbox", "📥 Inbox");</code></pre>
+      </section>
+
+      <section id="shortcuts">
+        <h2>Keyboard shortcuts</h2>
+        <table>
+          <tbody>
+            <tr><td><kbd>Alt</kbd>+<kbd>B</kbd></td><td>Open / close the panel (change it at <code>chrome://extensions/shortcuts</code>)</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Save right away (saving is automatic anyway)</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Run the page script / re-apply an injection</td></tr>
+            <tr><td><kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>F</kbd></td><td>Format the editor's contents</td></tr>
+            <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>Indent / outdent the selected lines</td></tr>
+            <tr><td><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> <kbd>Enter</kbd> <kbd>Esc</kbd></td><td>Move, choose and stop while picking an element</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="troubleshooting">
+        <h2>Troubleshooting</h2>
+        <dl>
+          <dt>The panel won't open (red ✕ on the icon)</dt>
+          <dd>Chrome doesn't let any extension run on the New Tab page, <code>chrome://</code> pages or the Chrome Web Store. Try a regular website.</dd>
+          <dt>An injected link does nothing when clicked</dt>
+          <dd>The site blocks clicks on links it didn't create. Add <a href="#attr-link"><code>data-boost-link</code></a>.</dd>
+          <dt>“Matches 0 elements”</dt>
+          <dd>The selector no longer matches, often because the site renamed generated class names. Pick the element again, or use ↑ to move to a more stable parent.</dd>
+          <dt>My script doesn't run</dt>
+          <dd>Turn on “Allow User Scripts” (see <a href="#start">Getting started</a>), and check the page console for <code>[Boosts]</code> errors. Element scripts don't re-run when you edit the HTML; press Re-apply.</dd>
+          <dt>My CSS doesn't apply</dt>
+          <dd>The page's rule is more specific, or the element has an inline style. Add <code>!important</code>, or use a more specific selector.</dd>
+        </dl>
+      </section>
+    </main>
+    <script src="src/handbook.js"></script>
+  </body>
+</html>

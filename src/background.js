@@ -114,6 +114,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     case "openExtensionSettings":
       chrome.tabs.create({ url: `chrome://extensions/?id=${chrome.runtime.id}` });
       return;
+    case "openHandbook":
+      chrome.tabs.create({ url: chrome.runtime.getURL(`handbook.html${msg.hash || ""}`) });
+      return;
     case "openManager":
       chrome.runtime.openOptionsPage();
       return;

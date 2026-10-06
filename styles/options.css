@@ -83,6 +83,10 @@ h1 {
   color: var(--on-tonal);
 }
 
+a.btn {
+  text-decoration: none;
+}
+
 .btn.text {
   height: 32px;
   padding: 0 12px;

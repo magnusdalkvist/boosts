@@ -31,6 +31,8 @@
     warn: "M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z",
     expandAll: "M21 11V3h-8l3.29 3.29-10 10L3 13v8h8l-3.29-3.29 10-10z",
     collapse: "M22 3.41 16.71 8.7 20 12h-8V4l3.29 3.29L20.59 2 22 3.41zM3.41 22l5.29-5.29L12 20v-8H4l3.29 3.29L2 20.59 3.41 22z",
+    book: "M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z",
+    link: "M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z",
     format: "M3 21h18v-2H3v2zm0-4h12v-2H3v2zm0-4h18v-2H3v2zm0-4h12V7H3v2zm0-6v2h18V3H3z",
   };
   const POSITIONS = [
@@ -354,6 +356,8 @@
     return api;
   }
 
+  const openHandbook = (hash = "") => chrome.runtime.sendMessage({ type: "openHandbook", hash });
+
   const formatBtn = (ed) => btn("text small", "format", "Format", () => ed.format(), { title: "Format code (Shift+Alt+F)" });
 
   // ---------------------------------------------------------------- boost editing
@@ -623,6 +627,7 @@
         ui.statusDot,
         ui.status,
         h("span", { class: "grow" }),
+        btn("text small", "book", "Handbook", () => openHandbook()),
         btn("text small", "layers", "All boosts", () => chrome.runtime.sendMessage({ type: "openManager" })),
       ),
       ui.toast,
@@ -1067,8 +1072,32 @@
       value: r.html,
       grow: true,
       placeholder: '<div class="note">Hello from Boosts 👋</div>',
-      onChange: (v) => edit(() => (r.html = v)),
+      onChange: (v) => {
+        edit(() => (r.html = v));
+        updateLinkHint();
+      },
     });
+    // Links without data-boost-link do nothing on sites that cancel link clicks
+    // (Gmail): point at the fix instead of silently patching it.
+    const linkHint = h(
+      "div",
+      { class: "hint-card" },
+      icon("link"),
+      h("span", null, "Link does nothing when clicked? Some sites block clicks on links they didn’t create. Add ", h("code", null, "data-boost-link"), " to the ", h("code", null, "<a>"), " or handle it in the script."),
+      btn("text small", null, "How", () => openHandbook("#attr-link")),
+    );
+    const updateLinkHint = () => {
+      const tpl = document.createElement("template");
+      try {
+        tpl.innerHTML = r.html;
+      } catch {
+        linkHint.hidden = true;
+        return;
+      }
+      const links = [...tpl.content.querySelectorAll("a[href]")];
+      linkHint.hidden = !links.length || links.every((a) => a.closest("[data-boost-link]"));
+    };
+    updateLinkHint();
     const runRule = () => {
       B.flush();
       B.rerunRule(boost.id, r.id);
@@ -1103,7 +1132,7 @@
         ),
       ),
       h("div", { class: "group" }, h("label", { class: "label" }, "Insert"), posSeg),
-      h("div", { class: "group" }, h("div", { class: "row" }, h("label", { class: "label" }, "HTML"), h("span", { class: "grow" }), formatBtn(html)), html.el),
+      h("div", { class: "group" }, h("div", { class: "row" }, h("label", { class: "label" }, "HTML"), h("span", { class: "grow" }), formatBtn(html)), html.el, linkHint),
       h(
         "div",
         { class: "group" },

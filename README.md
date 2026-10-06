@@ -20,8 +20,7 @@ expand button (or double-click the header) for a large editing size.
   HTML to insert before, at the start, at the end, after, or in place of it. Each
   injection can carry a script where `el` is the target and `nodes` are the inserted
   nodes. ↑/↓ walk to the parent/child, *All similar* drops the `:nth-child` so it
-  matches every sibling like it. Injected links keep working on apps like Gmail that
-  cancel link clicks; add `data-boost-manual` to a link to handle its clicks yourself.
+  matches every sibling like it.
 - **CSS**: applied live, cascades after the page's own styles. *Pick selector* drops
   a rule for any element you click.
 - **Script**: runs in the page once the DOM is ready, on every load. Ctrl+Enter runs it now.
@@ -36,6 +35,12 @@ While picking: arrow keys move through the tree, Enter chooses, Esc stops.
 (host + path). A site can have several boosts; switch, add or delete them from the
 menu under the boost name. **All boosts** lists everything, with toggles and JSON
 import/export.
+
+## Handbook
+
+`handbook.html` (the **Handbook** button in the panel footer and the manager) documents
+every feature, the element-script API and all `data-boost-*` attributes. Add new
+attributes there when you introduce them.
 
 ## How it works
 

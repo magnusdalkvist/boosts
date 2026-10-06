@@ -317,15 +317,14 @@
     true,
   );
 
-  // Apps like Gmail cancel every link click on the page to route it themselves,
-  // which leaves injected links dead. Registered at document_start, this runs
-  // before the page's own capture listeners; once the click has finished
-  // dispatching, follow the link ourselves if someone cancelled it. Mark an
-  // injected element with data-boost-manual to handle its clicks yourself.
+  // data-boost-link (see handbook.html#attr-link): apps like Gmail cancel every
+  // link click to route it themselves. For injected links that opt in, follow
+  // the link ourselves once the click has finished dispatching, if it was
+  // cancelled. Registered at document_start, so it runs before page listeners.
   function followInjectedLink(e) {
     if (B.picking || e.button > 1) return;
     const a = e.composedPath().find((n) => n instanceof HTMLAnchorElement && n.href);
-    if (!a || !a.closest("[data-boost-node]") || a.closest("[data-boost-manual]")) return;
+    if (!a?.closest("[data-boost-node]") || !a.closest("[data-boost-link]")) return;
     if (/^javascript:/i.test(a.getAttribute("href") || "")) return;
     if (e.type === "auxclick" && e.button !== 1) return;
     setTimeout(() => {

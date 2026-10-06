@@ -957,6 +957,37 @@ input:focus-visible {
   color: var(--on-surface-3);
 }
 
+.hint-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 4px 8px 10px;
+  border-radius: var(--radius-m);
+  background: var(--surface-1);
+  color: var(--on-surface-2);
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.hint-card .ic {
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  color: var(--primary);
+}
+
+.hint-card code {
+  padding: 0 3px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--on-surface);
+  font: 11.5px var(--mono);
+}
+
+.hint-card .btn {
+  margin-top: -5px;
+}
+
 /* banner, zap list ---------------------------------------------------------- */
 
 .banner {
