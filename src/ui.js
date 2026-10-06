@@ -434,6 +434,7 @@
   function startPick(opts) {
     stopPick();
     picking = opts;
+    B.picking = true;
     for (const t of PICK_EVENTS) window.addEventListener(t, onPickEvent, true);
     window.addEventListener("pointermove", onPickMove, true);
     window.addEventListener("keydown", onPickKey, true);
@@ -444,6 +445,7 @@
   function stopPick() {
     if (!picking) return;
     picking = null;
+    B.picking = false;
     hoverEl = null;
     for (const t of PICK_EVENTS) window.removeEventListener(t, onPickEvent, true);
     window.removeEventListener("pointermove", onPickMove, true);

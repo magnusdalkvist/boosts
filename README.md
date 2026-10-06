@@ -20,7 +20,8 @@ expand button (or double-click the header) for a large editing size.
   HTML to insert before, at the start, at the end, after, or in place of it. Each
   injection can carry a script where `el` is the target and `nodes` are the inserted
   nodes. ↑/↓ walk to the parent/child, *All similar* drops the `:nth-child` so it
-  matches every sibling like it.
+  matches every sibling like it. Injected links keep working on apps like Gmail that
+  cancel link clicks; add `data-boost-manual` to a link to handle its clicks yourself.
 - **CSS**: applied live, cascades after the page's own styles. *Pick selector* drops
   a rule for any element you click.
 - **Script**: runs in the page once the DOM is ready, on every load. Ctrl+Enter runs it now.
