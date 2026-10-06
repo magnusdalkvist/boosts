@@ -1334,8 +1334,8 @@
     });
     return [
       h("div", { class: "toolbar" }, btn("tonal", "play", "Run now", run), h("span", { class: "grow" }), h("span", { class: "hint" }, "Runs on every load · Ctrl+Enter"), ed.wrapButton(), formatBtn(ed)),
-      !userScriptsOk && userScriptsHint(),
       ed.el,
+      !userScriptsOk && userScriptsHint(),
     ];
   }
 

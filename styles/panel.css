@@ -1076,7 +1076,8 @@ input:focus-visible {
 }
 
 .body.fill > .hint-card {
-  margin-bottom: 12px;
+  flex: none;
+  margin-top: 12px;
 }
 
 /* banner, zap list ---------------------------------------------------------- */
