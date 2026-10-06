@@ -176,7 +176,7 @@
   const RE = {
     js: /(\/\/[^\n]*|\/\*[\s\S]*?(?:\*\/|$))|("(?:[^"\\\n]|\\.)*"?|'(?:[^'\\\n]|\\.)*'?|`(?:[^`\\]|\\[\s\S])*`?)|\b(const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|new|class|extends|import|export|from|async|await|try|catch|finally|throw|typeof|instanceof|in|of|this|null|undefined|true|false|default|yield|delete|void)\b|(\b(?:0x[\da-fA-F]+|\d[\d_]*(?:\.\d+)?(?:e[+-]?\d+)?)\b)|([A-Za-z_$][\w$]*)(?=\s*\()/g,
     css: /(\/\*[\s\S]*?(?:\*\/|$))|("(?:[^"\\\n]|\\.)*"?|'(?:[^'\\\n]|\\.)*'?)|(@[\w-]+)|([{}])|(![\w]+)|(#[\da-fA-F]{3,8}\b|-?\b\d*\.?\d+(?:px|em|rem|%|vh|vw|vmin|vmax|s|ms|deg|fr|ch|ex)?\b)|(--[\w-]+|[a-zA-Z-]+)(?=\s*:(?!:))/g,
-    html: /(<!--[\s\S]*?(?:-->|$))|(<\/?[\w-]+)|(\/?>)|([\w:@.-]+)(?=\s*=)|("[^"]*"?|'[^']*'?)/g,
+    html: /(<!--[\s\S]*?(?:-->|$))|(<\/?[\w-]+)|(\/?>)|([^\s"'<>\/=]+)|("[^"]*"?|'[^']*'?)|(=)/g,
   };
 
   function highlight(lang, src) {
@@ -187,6 +187,7 @@
     let at = 0;
     let depth = 0;
     let inTag = false;
+    let afterEq = false;
     for (let m; (m = re.exec(src)); ) {
       if (!m[0]) {
         re.lastIndex++;
@@ -203,7 +204,11 @@
       } else {
         if (g === 2) inTag = true;
         if (g === 3) inTag = false;
-        const cls = ["", "com", "tag", "tag", "attr", "str"][g];
+        // Inside a tag every bare name is an attribute (with or without a value),
+        // except an unquoted value right after "=".
+        let cls = ["", "com", "tag", "tag", "attr", "str", ""][g];
+        if (g === 4 && afterEq) cls = "str";
+        afterEq = g === 6;
         push(g >= 4 && !inTag ? "" : cls, m[0]);
       }
     }
