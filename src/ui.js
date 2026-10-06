@@ -57,7 +57,8 @@
 
   let host, shadow, ui;
   let open = false;
-  let prefs = { x: null, y: null, w: 400, h: 620, tab: "elements", minimized: false, wrap: true };
+  // wrapped: field key -> true for fields with word wrap on (off by default).
+  let prefs = { x: null, y: null, w: 400, h: 620, tab: "elements", minimized: false, wrapped: {} };
   let boost = null;
   let draft = false;
   let expanded = null;
@@ -287,7 +288,7 @@
     }
   }
 
-  function createEditor({ lang, value, placeholder, onChange, onRun, grow = false, minLines = 5 }) {
+  function createEditor({ lang, value, placeholder, onChange, onRun, wrapKey, grow = false, minLines = 5 }) {
     const ta = h("textarea", {
       class: "ed-input",
       spellcheck: "false",
@@ -350,7 +351,7 @@
       const { selectionStart: s, selectionEnd: t, value: v } = ta;
       if (e.altKey && !e.shiftKey && !mod && e.code === "KeyZ") {
         e.preventDefault();
-        toggleWrap();
+        api.toggleWrap();
       } else if (e.shiftKey && e.altKey && e.code === "KeyF") {
         e.preventDefault();
         api.format();
@@ -388,9 +389,31 @@
     });
 
     paint();
+    const wrapButtons = new Set();
+    const isWrapped = () => !!prefs.wrapped[wrapKey];
+    const syncWrap = () => {
+      el.classList.toggle("nowrap", !isWrapped());
+      for (const b of wrapButtons) b.setAttribute("aria-pressed", String(isWrapped()));
+    };
+    syncWrap();
+
     const api = {
       el,
       ta,
+      /** Word wrap is per field and remembered; off unless turned on. */
+      toggleWrap() {
+        if (isWrapped()) delete prefs.wrapped[wrapKey];
+        else prefs.wrapped[wrapKey] = true;
+        savePrefs();
+        syncWrap();
+        fit();
+      },
+      wrapButton() {
+        const b = iconBtn("wrap", "Word wrap (Alt+Z)", () => api.toggleWrap(), "small wrap-toggle");
+        wrapButtons.add(b);
+        syncWrap();
+        return b;
+      },
       /** Pretty-print in place; goes through insertText so Ctrl+Z undoes it. */
       async format() {
         if (!ta.value.trim()) return;
@@ -443,24 +466,6 @@
   const openHandbook = (hash = "") => chrome.runtime.sendMessage({ type: "openHandbook", hash });
 
   const formatBtn = (ed) => btn("text small", "format", "Format", () => ed.format(), { title: "Format code (Shift+Alt+F)" });
-
-  /** Word wrap is one setting for every editor, toggled from any of them. */
-  function toggleWrap() {
-    prefs.wrap = !prefs.wrap;
-    savePrefs();
-    applyWrap();
-  }
-
-  function applyWrap() {
-    ui.panel.classList.toggle("nowrap", !prefs.wrap);
-    for (const b of shadow.querySelectorAll(".wrap-toggle")) b.setAttribute("aria-pressed", String(prefs.wrap));
-  }
-
-  const wrapBtn = () => {
-    const b = iconBtn("wrap", "Word wrap (Alt+Z)", toggleWrap, "small wrap-toggle");
-    b.setAttribute("aria-pressed", String(prefs.wrap));
-    return b;
-  };
 
   // ---------------------------------------------------------------- boost editing
 
@@ -754,7 +759,6 @@
     ui.header.addEventListener("pointerdown", startDrag);
     ui.header.addEventListener("dblclick", (e) => !e.target.closest("button, input") && toggleExpanded());
     renderExpand();
-    applyWrap();
     addEventListener("scroll", redrawSoon, { capture: true, passive: true });
     addEventListener("resize", () => {
       applyGeometry();
@@ -1180,6 +1184,7 @@
     const html = createEditor({
       lang: "html",
       value: r.html,
+      wrapKey: `${boost.id}/${r.id}/html`,
       grow: true,
       placeholder: '<div class="note">Hello from Boosts 👋</div>',
       onChange: (v) => {
@@ -1219,6 +1224,7 @@
     const js = createEditor({
       lang: "js",
       value: r.js,
+      wrapKey: `${boost.id}/${r.id}/js`,
       grow: true,
       minLines: 3,
       placeholder: "// `el` = matched element, `node` = first inserted element, `nodes` = all of them\nnode?.addEventListener('click', () => el.remove());",
@@ -1245,11 +1251,11 @@
         ),
       ),
       h("div", { class: "group" }, h("label", { class: "label" }, "Insert"), posSeg),
-      h("div", { class: "group" }, h("div", { class: "row" }, h("label", { class: "label" }, "HTML"), h("span", { class: "grow" }), wrapBtn(), formatBtn(html)), html.el, linkHint),
+      h("div", { class: "group" }, h("div", { class: "row" }, h("label", { class: "label" }, "HTML"), h("span", { class: "grow" }), html.wrapButton(), formatBtn(html)), html.el, linkHint),
       h(
         "div",
         { class: "group" },
-        h("div", { class: "row" }, h("label", { class: "label" }, "Script"), h("span", { class: "grow" }), wrapBtn(), formatBtn(js), btn("text small", "play", "Re-apply", runRule, { title: "Re-insert HTML and run the script (Ctrl+Enter)" })),
+        h("div", { class: "row" }, h("label", { class: "label" }, "Script"), h("span", { class: "grow" }), js.wrapButton(), formatBtn(js), btn("text small", "play", "Re-apply", runRule, { title: "Re-insert HTML and run the script (Ctrl+Enter)" })),
         !userScriptsOk && userScriptsBanner(),
         js.el,
       ),
@@ -1271,6 +1277,7 @@
     const ed = createEditor({
       lang: "css",
       value: boost.css,
+      wrapKey: `${boost.id}/css`,
       placeholder: "/* Applied live to this site */\nbody {\n  font-family: system-ui, sans-serif;\n}",
       onChange: (v) => edit((b) => (b.css = v)),
     });
@@ -1291,7 +1298,7 @@
         ),
         h("span", { class: "grow" }),
         h("span", { class: "hint" }, h("span", { class: "live-dot" }), "Live"),
-        wrapBtn(),
+        ed.wrapButton(),
         formatBtn(ed),
       ),
       ed.el,
@@ -1310,13 +1317,14 @@
     const ed = createEditor({
       lang: "js",
       value: boost.js,
+      wrapKey: `${boost.id}/page-js`,
       placeholder: "// Runs in the page once it has loaded\nconsole.log('Boosted', location.host);",
       onChange: (v) => edit((b) => (b.js = v)),
       onRun: run,
     });
     return [
       !userScriptsOk && userScriptsBanner(),
-      h("div", { class: "toolbar" }, btn("tonal", "play", "Run now", run), h("span", { class: "grow" }), h("span", { class: "hint" }, "Runs on every load · Ctrl+Enter"), wrapBtn(), formatBtn(ed)),
+      h("div", { class: "toolbar" }, btn("tonal", "play", "Run now", run), h("span", { class: "grow" }), h("span", { class: "hint" }, "Runs on every load · Ctrl+Enter"), ed.wrapButton(), formatBtn(ed)),
       ed.el,
     ];
   }

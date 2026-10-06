@@ -75,7 +75,7 @@
         <p>The <strong>Target</strong> is a CSS selector, and the injection applies to every element it matches. The counter shows how many matches there are. <em>All similar</em> drops the trailing <code>:nth-child()</code> so one injection covers every sibling like the one you picked. If the page re-renders or a single-page app adds matching elements later, Boosts injects into them too.</p>
         <p><code>&lt;script&gt;</code> tags inside injected HTML don't run. Put code in the injection's script instead.</p>
         <p><strong>Format</strong> (or <kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>F</kbd>) pretty-prints the editor's contents. <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes it.</p>
-        <p>The wrap button (or <kbd>Alt</kbd>+<kbd>Z</kbd>) switches word wrap on or off for every editor. With wrap off, long lines scroll sideways and the line numbers stay put. The HTML and script fields grow with your code up to about 18 lines and then scroll. Drag the bar under a field to make it taller or shorter.</p>
+        <p>Word wrap is off by default. The wrap button (or <kbd>Alt</kbd>+<kbd>Z</kbd> inside a field) turns it on or off for that field only, and each field remembers its setting. With wrap off, long lines scroll sideways and the line numbers stay put. The HTML and script fields grow with your code up to about 18 lines and then scroll. Drag the bar under a field to make it taller or shorter.</p>
       </section>
 
       <section id="element-scripts">
@@ -197,7 +197,7 @@ el.textContent = el.textContent.replace("Inbox", "📥 Inbox");</code></pre>
             <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Apply and save right away (both happen automatically when you pause)</td></tr>
             <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Run the page script / re-apply an injection</td></tr>
             <tr><td><kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>F</kbd></td><td>Format the editor's contents</td></tr>
-            <tr><td><kbd>Alt</kbd>+<kbd>Z</kbd></td><td>Toggle word wrap in all editors</td></tr>
+            <tr><td><kbd>Alt</kbd>+<kbd>Z</kbd></td><td>Toggle word wrap in the current field</td></tr>
             <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>Indent / outdent the selected lines</td></tr>
             <tr><td><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> <kbd>Enter</kbd> <kbd>Esc</kbd></td><td>Move, choose and stop while picking an element</td></tr>
           </tbody>

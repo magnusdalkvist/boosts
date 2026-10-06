@@ -923,12 +923,12 @@ input:focus-visible {
 
 /* Word wrap off: the column grows to the longest line and the editor scrolls
    sideways; the textarea stretches with it so it never scrolls on its own. */
-.nowrap .ed-main {
+.ed.nowrap .ed-main {
   grid-template-columns: minmax(max-content, 1fr);
 }
 
-.nowrap .ed-hl,
-.nowrap .ed-input {
+.ed.nowrap .ed-hl,
+.ed.nowrap .ed-input {
   white-space: pre;
   overflow-wrap: normal;
 }
