@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Boosts</title>
+    <link rel="icon" href="icons/icon-32.png" />
+    <link rel="stylesheet" href="styles/tokens.css" />
+    <link rel="stylesheet" href="styles/options.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand"><img src="icons/icon-48.png" alt="" /></div>
+      <div>
+        <h1>Boosts</h1>
+        <p class="sub">Every customization you've made, grouped by site.</p>
+      </div>
+      <span class="grow"></span>
+      <input id="search" class="search" type="search" placeholder="Search boosts" aria-label="Search boosts" />
+      <button id="import" class="btn tonal" type="button">Import</button>
+      <button id="export" class="btn filled" type="button">Export</button>
+      <input id="file" type="file" accept="application/json,.json" hidden />
+    </header>
+    <main id="list"></main>
+    <div id="toast" class="toast" role="status"></div>
+    <script src="src/options.js"></script>
+  </body>
+</html>

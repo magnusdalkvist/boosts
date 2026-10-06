@@ -1,0 +1,274 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--surface-dim);
+  color: var(--on-surface);
+  font: 14px/1.5 var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 28px 24px 20px;
+  background: var(--surface-dim);
+}
+
+.brand img {
+  display: block;
+  width: 44px;
+  height: 44px;
+}
+
+h1 {
+  margin: 0;
+  font: 500 24px/30px var(--font-display);
+}
+
+.sub {
+  margin: 0;
+  color: var(--on-surface-3);
+  font-size: 13px;
+}
+
+.grow {
+  flex: 1;
+}
+
+.search {
+  width: 220px;
+  height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--on-surface);
+  font: inherit;
+  outline: none;
+}
+
+.search:focus {
+  box-shadow: 0 0 0 2px var(--primary);
+  background: var(--surface);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  font: 500 14px/1 var(--font);
+  cursor: pointer;
+}
+
+.btn.filled {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.btn.tonal {
+  background: var(--tonal);
+  color: var(--on-tonal);
+}
+
+.btn.text {
+  height: 32px;
+  padding: 0 12px;
+  background: none;
+  color: var(--primary);
+  font-size: 13px;
+}
+
+.btn.text.danger {
+  color: var(--danger);
+}
+
+.btn:hover {
+  filter: brightness(0.97);
+}
+
+main {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 24px 64px;
+}
+
+.site {
+  margin-bottom: 16px;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  border: 1px solid var(--outline-soft);
+}
+
+.site-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px 10px 20px;
+}
+
+.site-head img {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+}
+
+.site-head h2 {
+  margin: 0;
+  font: 500 15px/22px var(--font-display);
+}
+
+.site-head a {
+  color: var(--on-surface-3);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.site-head a:hover {
+  color: var(--primary);
+}
+
+.boost {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px 10px 20px;
+  border-top: 1px solid var(--outline-soft);
+}
+
+.boost-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.boost-name {
+  font-weight: 500;
+}
+
+.boost-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.tag {
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--surface-1);
+  color: var(--on-surface-2);
+  font-size: 11.5px;
+}
+
+.tag.scope {
+  background: var(--tonal);
+  color: var(--on-tonal);
+}
+
+.when {
+  color: var(--on-surface-3);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.switch {
+  position: relative;
+  width: 44px;
+  height: 26px;
+  flex: none;
+  padding: 0;
+  border: 2px solid var(--on-surface-3);
+  border-radius: 999px;
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: all 160ms var(--ease);
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--on-surface-3);
+  transform: translateY(-50%);
+  transition: all 200ms var(--ease);
+}
+
+.switch[aria-checked="true"] {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+.switch[aria-checked="true"]::after {
+  left: 20px;
+  width: 16px;
+  height: 16px;
+  background: var(--on-primary);
+}
+
+.empty {
+  padding: 80px 20px;
+  text-align: center;
+  color: var(--on-surface-2);
+}
+
+.empty h2 {
+  margin: 0 0 6px;
+  color: var(--on-surface);
+  font: 500 20px/28px var(--font-display);
+}
+
+kbd {
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  font: 12px var(--mono);
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  background: #303030;
+  color: #f2f2f2;
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  transition: all 200ms var(--ease);
+  pointer-events: none;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (max-width: 640px) {
+  .top {
+    flex-wrap: wrap;
+  }
+  .search {
+    width: 100%;
+    order: 9;
+  }
+  .when {
+    display: none;
+  }
+}

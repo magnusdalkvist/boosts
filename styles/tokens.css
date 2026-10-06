@@ -1,0 +1,112 @@
+/* Shared design tokens — Chrome's Material 3 palette with a softer, modern finish.
+   Used by the in-page panel (:host) and the manager page (:root). */
+
+:host,
+:root {
+  --font: "Google Sans Text", "Google Sans", Roboto, Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Google Sans", "Google Sans Text", Roboto, Inter, system-ui, sans-serif;
+  --mono: "Google Sans Mono", "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --surface: #ffffff;
+  --surface-dim: #f8fafd;
+  --surface-1: #f0f4f9;
+  --surface-2: #e9eef6;
+  --surface-3: #dde3ea;
+  --on-surface: #1f1f1f;
+  --on-surface-2: #444746;
+  --on-surface-3: #747775;
+  --outline: #c4c7c5;
+  --outline-soft: #e3e3e3;
+
+  --primary: #0b57d0;
+  --on-primary: #ffffff;
+  --primary-hover: #0a4fbd;
+  --tonal: #d3e3fd;
+  --on-tonal: #041e49;
+  --tonal-hover: #c2d7fa;
+  --accent: #8b5cf6;
+  --gradient: linear-gradient(135deg, #4f7cff, #8b5cf6);
+
+  --danger: #b3261e;
+  --danger-tonal: #f9dedc;
+  --warn-tonal: #fef7e0;
+  --on-warn: #7a5900;
+  --ok: #146c2e;
+
+  --hl-pick: #1a73e8;
+  --hl-zap: #d93025;
+
+  --code-bg: #f8fafd;
+  --t-com: #8a8f98;
+  --t-str: #0b7a3e;
+  --t-kw: #a626a4;
+  --t-num: #b45309;
+  --t-fn: #0b57d0;
+  --t-tag: #a626a4;
+  --t-attr: #b45309;
+  --t-prop: #0b57d0;
+  --t-sel: #9a3412;
+  --t-at: #a626a4;
+
+  --radius-xl: 20px;
+  --radius-l: 14px;
+  --radius-m: 10px;
+  --radius-s: 8px;
+  --shadow:
+    0 1px 2px rgb(0 0 0 / 0.06),
+    0 8px 24px -4px rgb(16 24 40 / 0.14),
+    0 24px 56px -12px rgb(16 24 40 / 0.22);
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :host,
+  :root {
+    --surface: #1f1f1f;
+    --surface-dim: #191a1b;
+    --surface-1: #282a2c;
+    --surface-2: #2f3133;
+    --surface-3: #3a3d40;
+    --on-surface: #e3e3e3;
+    --on-surface-2: #c4c7c5;
+    --on-surface-3: #8e918f;
+    --outline: #5c5f5e;
+    --outline-soft: #333537;
+
+    --primary: #a8c7fa;
+    --on-primary: #062e6f;
+    --primary-hover: #b9d2fb;
+    --tonal: #0f3b70;
+    --on-tonal: #d3e3fd;
+    --tonal-hover: #14467f;
+    --accent: #b9a1ff;
+
+    --danger: #f2b8b5;
+    --danger-tonal: #601410;
+    --warn-tonal: #3d3000;
+    --on-warn: #fdd663;
+    --ok: #6dd58c;
+
+    --hl-pick: #8ab4f8;
+    --hl-zap: #f28b82;
+
+    --code-bg: #191a1b;
+    --t-com: #7c818a;
+    --t-str: #81c995;
+    --t-kw: #d7aefb;
+    --t-num: #fcad70;
+    --t-fn: #8ab4f8;
+    --t-tag: #d7aefb;
+    --t-attr: #fcad70;
+    --t-prop: #8ab4f8;
+    --t-sel: #fdd663;
+    --t-at: #d7aefb;
+
+    --shadow:
+      0 1px 2px rgb(0 0 0 / 0.4),
+      0 12px 32px -6px rgb(0 0 0 / 0.55),
+      0 28px 64px -16px rgb(0 0 0 / 0.6);
+    color-scheme: dark;
+  }
+}

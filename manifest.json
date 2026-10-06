@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Boosts",
+  "version": "0.1.0",
+  "description": "Customize any website: pick an element, inject HTML, CSS and JavaScript, saved per site or page.",
+  "minimum_chrome_version": "135",
+  "permissions": ["storage", "scripting", "userScripts", "contextMenus", "activeTab", "tabs", "favicon"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "src/background.js" },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/core.js", "src/ui.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    { "resources": ["styles/tokens.css", "styles/panel.css"], "matches": ["<all_urls>"], "use_dynamic_url": true }
+  ],
+  "commands": {
+    "toggle-panel": {
+      "suggested_key": { "default": "Alt+Shift+B" },
+      "description": "Toggle the Boosts panel"
+    }
+  },
+  "options_page": "options.html",
+  "icons": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
+  "action": {
+    "default_title": "Boosts (Alt+Shift+B)",
+    "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" }
+  }
+}
