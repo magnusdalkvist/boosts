@@ -79,18 +79,20 @@
 
       <section id="element-scripts">
         <h2>Element scripts</h2>
-        <p>Each injection can carry a script. It runs in the page's own JavaScript context, so it can see the page's globals, once for every element the selector matches. Two variables are provided:</p>
+        <p>Each injection can carry a script. It runs in the page's own JavaScript context, so it can see the page's globals, once for every element the selector matches. Three variables are provided:</p>
         <table>
           <thead><tr><th>Name</th><th>Value</th></tr></thead>
           <tbody>
             <tr><td><code>el</code></td><td>The matched target element. Also available as <code>this</code>.</td></tr>
-            <tr><td><code>nodes</code></td><td>An array of the top-level elements your HTML inserted next to/inside this target.</td></tr>
+            <tr><td><code>node</code></td><td>The first element your HTML inserted, the same as <code>nodes[0]</code>. Most injections are a single element, so this is usually the one you want.</td></tr>
+            <tr><td><code>nodes</code></td><td>An array of all the top-level elements your HTML inserted next to or inside this target.</td></tr>
           </tbody>
         </table>
         <pre><code>// Collapse the target when the injected button is clicked
-nodes[0].addEventListener("click", () =&gt; {
+node.addEventListener("click", () =&gt; {
   el.hidden = !el.hidden;
 });</code></pre>
+        <p>Don't declare your own variable called <code>el</code>, <code>node</code> or <code>nodes</code> (for example <code>const node = …</code>). Those names are already taken, so the script fails with a syntax error.</p>
         <p>The script is wrapped in an <code>async</code> function, so <code>await</code> works. Errors go to the page console, prefixed with <code>[Boosts]</code> and the boost name.</p>
         <p><strong>When it runs:</strong> on page load, whenever a new matching element appears, and when you press <strong>Re-apply</strong> (<kbd>Ctrl</kbd>+<kbd>Enter</kbd>). Editing the HTML re-inserts it live but doesn't re-run the script, because it would run on every keystroke. Press Re-apply when you're ready.</p>
       </section>
@@ -201,7 +203,7 @@ el.textContent = el.textContent.replace("Inbox", "📥 Inbox");</code></pre>
           <dt>“Matches 0 elements”</dt>
           <dd>The selector no longer matches, often because the site renamed generated class names. Pick the element again, or use ↑ to move to a more stable parent.</dd>
           <dt>My script doesn't run</dt>
-          <dd>Turn on “Allow User Scripts” (see <a href="#start">Getting started</a>), and check the page console for <code>[Boosts]</code> errors. Element scripts don't re-run when you edit the HTML; press Re-apply.</dd>
+          <dd>Turn on “Allow User Scripts” (see <a href="#start">Getting started</a>). Without it, sites with a strict security policy block every script, and Gmail reports “This document requires 'TrustedScript' assignment”. Then check the page console for <code>[Boosts]</code> errors. Element scripts don't re-run when you edit the HTML; press Re-apply.</dd>
           <dt>My CSS doesn't apply</dt>
           <dd>The page's rule is more specific, or the element has an inline style. Add <code>!important</code>, or use a more specific selector.</dd>
         </dl>

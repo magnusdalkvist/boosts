@@ -392,6 +392,22 @@
     return api;
   }
 
+  const openExtensionSettings = () => chrome.runtime.sendMessage({ type: "openExtensionSettings" });
+
+  function blockedToast() {
+    toast("This site blocked the script. Turn on “Allow User Scripts” for Boosts.", "Open", openExtensionSettings);
+  }
+
+  /** Shown above script editors while "Allow User Scripts" is off. */
+  const userScriptsBanner = () =>
+    h(
+      "div",
+      { class: "banner" },
+      icon("warn"),
+      h("div", null, h("b", null, "Allow user scripts for full power"), h("p", null, "Without it, scripts can’t run on sites with a strict security policy, like Gmail. Turn on “Allow User Scripts” on the extension’s details page.")),
+      btn("text small", "openNew", "Open", openExtensionSettings),
+    );
+
   const openHandbook = (hash = "") => chrome.runtime.sendMessage({ type: "openHandbook", hash });
 
   const formatBtn = (ed) => btn("text small", "format", "Format", () => ed.format(), { title: "Format code (Shift+Alt+F)" });
@@ -825,7 +841,7 @@
     chrome.runtime.sendMessage({ type: "status" }).then((s) => {
       if (userScriptsOk === s?.userScripts) return;
       userScriptsOk = !!s?.userScripts;
-      if (prefs.tab === "js") renderBody();
+      renderBody();
     }).catch(() => {});
   }
 
@@ -1143,17 +1159,18 @@
       linkHint.hidden = !links.length || links.every((a) => a.closest("[data-boost-link]"));
     };
     updateLinkHint();
-    const runRule = () => {
+    const runRule = async () => {
       B.flush();
-      B.rerunRule(boost.id, r.id);
-      if (!userScriptsOk) toast("Running via <script> — may be blocked by this site’s CSP");
+      const results = await B.rerunRule(boost.id, r.id);
+      if (results.some((res) => !res?.ok)) blockedToast();
+      else if (results.length) toast(`Script ran on ${results.length} element${results.length === 1 ? "" : "s"}`);
     };
     const js = createEditor({
       lang: "js",
       value: r.js,
       grow: true,
       minLines: 3,
-      placeholder: "// `el` is the matched element, `nodes` your inserted nodes\nnodes[0]?.addEventListener('click', () => el.remove());",
+      placeholder: "// `el` = matched element, `node` = first inserted element, `nodes` = all of them\nnode?.addEventListener('click', () => el.remove());",
       onChange: (v) => edit(() => (r.js = v)),
       onRun: runRule,
     });
@@ -1182,6 +1199,7 @@
         "div",
         { class: "group" },
         h("div", { class: "row" }, h("label", { class: "label" }, "Script"), h("span", { class: "grow" }), formatBtn(js), btn("text small", "play", "Re-apply", runRule, { title: "Re-insert HTML and run the script (Ctrl+Enter)" })),
+        !userScriptsOk && userScriptsBanner(),
         js.el,
       ),
       h(
@@ -1234,7 +1252,8 @@
     const run = async () => {
       B.flush();
       const res = await B.runPageJs(boost.id);
-      toast(res?.ok ? "Script ran — check the console for output" : "Blocked by this site’s CSP — allow user scripts");
+      if (res?.ok) toast("Script ran — check the console for output");
+      else blockedToast();
     };
     const ed = createEditor({
       lang: "js",
@@ -1244,14 +1263,7 @@
       onRun: run,
     });
     return [
-      !userScriptsOk &&
-        h(
-          "div",
-          { class: "banner" },
-          icon("warn"),
-          h("div", null, h("b", null, "Allow user scripts for full power"), h("p", null, "Without it, scripts can’t run on sites with a strict Content Security Policy. Turn on “Allow User Scripts” on the extension’s details page.")),
-          btn("text small", "openNew", "Open", () => chrome.runtime.sendMessage({ type: "openExtensionSettings" })),
-        ),
+      !userScriptsOk && userScriptsBanner(),
       h("div", { class: "toolbar" }, btn("tonal", "play", "Run now", run), h("span", { class: "grow" }), h("span", { class: "hint" }, "Runs on every load · Ctrl+Enter"), formatBtn(ed)),
       ed.el,
     ];

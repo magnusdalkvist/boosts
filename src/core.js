@@ -40,8 +40,14 @@
 
   B.isOwnNode = (n) => !!(n instanceof Element && (n.closest("[data-boost-node]") || n.localName === "boosts-ui"));
 
-  B.exec = (code) =>
-    chrome.runtime.sendMessage({ type: "exec", code }).catch((e) => ({ ok: false, error: String(e?.message || e) }));
+  let execLog = null; // collects exec results while B.rerunRule runs
+  B.exec = (code) => {
+    const p = chrome.runtime
+      .sendMessage({ type: "exec", code })
+      .catch((e) => ({ ok: false, error: String(e?.message || e) }));
+    execLog?.push(p);
+    return p;
+  };
 
   function parseHtml(html) {
     const tpl = document.createElement("template");
@@ -142,14 +148,19 @@
     return B.exec(pageJsCode(b));
   };
 
-  /** Re-insert a rule's HTML everywhere and run its element script. */
+  /** Re-insert a rule's HTML everywhere and run its element script; resolves
+      to the exec results (one per matched element that has a script). */
   B.rerunRule = (boostId, ruleId) => {
     const st = active.get(boostId);
     const rs = st?.rules.get(ruleId);
-    if (!rs) return;
+    if (!rs) return Promise.resolve([]);
     undoRule(rs);
     st.rules.delete(ruleId);
+    execLog = [];
     applyBoost(st.boost, true);
+    const runs = execLog;
+    execLog = null;
+    return Promise.all(runs);
   };
 
   // ---------------------------------------------------------------- applying
@@ -291,7 +302,7 @@
     return `(() => {
   const el = document.querySelector('[data-boost-el~="${token}"]');
   const nodes = [...document.querySelectorAll('[data-boost-node="${token}"]')];
-  (async function (el, nodes) {\n${r.js}\n  }).call(el, el, nodes).catch((e) => console.error(${label(b)}, e));
+  (async function (el, nodes, node) {\n${r.js}\n  }).call(el, el, nodes, nodes[0]).catch((e) => console.error(${label(b)}, e));
 })();`;
   }
 

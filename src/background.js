@@ -43,16 +43,31 @@ async function runInPage(tabId, code) {
       // script clears tells us whether the page's CSP let it through.
       const root = document.documentElement;
       root.setAttribute("data-boost-probe", "");
-      const s = document.createElement("script");
-      s.textContent = `document.documentElement.removeAttribute("data-boost-probe");\n${src}`;
-      (document.head || root).append(s);
-      s.remove();
+      let error = null;
+      try {
+        let code = `document.documentElement.removeAttribute("data-boost-probe");\n${src}`;
+        // Trusted Types pages (Gmail) reject plain strings; this only helps if
+        // the page also allows our policy name, which strict ones don't.
+        if (window.trustedTypes?.createPolicy) {
+          try {
+            const name = `boosts-${Math.random().toString(36).slice(2)}`;
+            code = trustedTypes.createPolicy(name, { createScript: (x) => x }).createScript(code);
+          } catch {}
+        }
+        const s = document.createElement("script");
+        s.textContent = code;
+        (document.head || root).append(s);
+        s.remove();
+      } catch (e) {
+        error = String(e?.message || e);
+      }
       const ran = !root.hasAttribute("data-boost-probe");
       root.removeAttribute("data-boost-probe");
-      return ran;
+      return { ran, error };
     },
   });
-  return { ok: res?.result !== false, via: "script-tag" };
+  const { ran = false, error = null } = res?.result || {};
+  return { ok: ran, via: "script-tag", error: ran ? null : error || "Blocked by the page's Content Security Policy" };
 }
 
 chrome.runtime.onInstalled.addListener(() => {
