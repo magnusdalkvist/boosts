@@ -95,6 +95,15 @@ node.addEventListener("click", () =&gt; {
 });</code></pre>
         <p>Don't declare your own variable called <code>el</code>, <code>node</code> or <code>nodes</code> (for example <code>const node = …</code>). Those names are already taken, so the script fails with a syntax error.</p>
         <p>The script is wrapped in an <code>async</code> function, so <code>await</code> works. Errors go to the page console, prefixed with <code>[Boosts]</code> and the boost name.</p>
+        <h3 id="trusted-types">Strict sites (Gmail): no HTML strings in scripts</h3>
+        <p>Gmail and other Google apps enforce <em>Trusted Types</em>. Scripts run inside the page, so the page blocks every API that turns a string into HTML. That includes <code>innerHTML</code>, <code>outerHTML</code>, <code>insertAdjacentHTML</code>, <code>document.write</code> and <code>DOMParser.parseFromString</code>, even for XML. The console shows “This document requires 'TrustedHTML' assignment”. Work around it like this:</p>
+        <ul>
+          <li>Put markup in the injection's <strong>HTML</strong> field. Boosts inserts it from outside the page, so it isn't blocked.</li>
+          <li>Build elements with <code>document.createElement</code>, <code>textContent</code>, <code>append</code> and <code>setAttribute</code>.</li>
+          <li>Read values out of text responses with a regular expression instead of parsing them:</li>
+        </ul>
+        <pre><code>const text = await (await fetch("/mail/u/0/feed/atom")).text();
+const unread = Number(text.match(/&lt;fullcount&gt;(\d+)&lt;\/fullcount&gt;/)?.[1] ?? 0);</code></pre>
         <p><strong>When it runs:</strong> on page load, whenever a new matching element appears, and when you press <strong>Re-apply</strong> (<kbd>Ctrl</kbd>+<kbd>Enter</kbd>). Editing the HTML re-inserts it live but doesn't re-run the script, because it would run on every keystroke. Press Re-apply when you're ready.</p>
       </section>
 
@@ -206,6 +215,8 @@ el.textContent = el.textContent.replace("Inbox", "📥 Inbox");</code></pre>
           <dd>The selector no longer matches, often because the site renamed generated class names. Pick the element again, or use ↑ to move to a more stable parent.</dd>
           <dt>My script doesn't run</dt>
           <dd>Turn on “Allow User Scripts” (see <a href="#start">Getting started</a>). Without it, sites with a strict security policy block every script, and Gmail reports “This document requires 'TrustedScript' assignment”. Then check the page console for <code>[Boosts]</code> errors. Element scripts don't re-run when you edit the HTML; press Re-apply.</dd>
+          <dt>“This document requires 'TrustedHTML' assignment”</dt>
+          <dd>Your script used <code>innerHTML</code>, <code>DOMParser</code> or a similar API on a strict site. See <a href="#trusted-types">Strict sites</a>.</dd>
           <dt>My CSS doesn't apply</dt>
           <dd>The page's rule is more specific, or the element has an inline style. Add <code>!important</code>, or use a more specific selector.</dd>
         </dl>
