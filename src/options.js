@@ -65,7 +65,7 @@ function render() {
   const list = $("#list");
   if (!boosts.length) {
     list.replaceChildren(
-      h("div", { class: "empty" }, h("h2", null, "No boosts yet"), h("p", null, "Open any site and press ", h("kbd", null, "Alt+Shift+B"), " or click the toolbar icon to start customizing it.")),
+      h("div", { class: "empty" }, h("h2", null, "No boosts yet"), h("p", null, "Open any site and press ", h("kbd", null, "Alt+B"), " or click the toolbar icon to start customizing it.")),
     );
     return;
   }

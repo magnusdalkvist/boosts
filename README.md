@@ -12,7 +12,7 @@ JavaScript, saved per site or per page.
 
 ## Use
 
-Click the toolbar icon or press **Alt+Shift+B** on any page to open the floating panel.
+Click the toolbar icon or press **Alt+B** on any page to open the floating panel.
 
 - **Elements**: *Select element* (or right-click → *Boost this element*), then write
   HTML to insert before, at the start, at the end, after, or in place of it. Each

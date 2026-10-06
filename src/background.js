@@ -66,14 +66,24 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   sendToTab(tab.id, { type: action }).catch(() => {});
 });
 
-chrome.action.onClicked.addListener((tab) => {
-  if (tab.id) sendToTab(tab.id, { type: "toggle" }).catch(() => {});
-});
+async function togglePanel(tab) {
+  if (!tab?.id) return;
+  try {
+    await sendToTab(tab.id, { type: "toggle" });
+  } catch {
+    // New Tab, chrome:// pages and the Web Store can't be scripted by any extension.
+    chrome.action.setBadgeText({ tabId: tab.id, text: "✕" });
+    chrome.action.setBadgeBackgroundColor({ tabId: tab.id, color: "#b3261e" });
+    chrome.action.setTitle({ tabId: tab.id, title: "Boosts can't run on this page" });
+    setTimeout(() => chrome.action.setBadgeText({ tabId: tab.id, text: "" }).catch(() => {}), 2500);
+  }
+}
+
+chrome.action.onClicked.addListener(togglePanel);
 
 chrome.commands.onCommand.addListener(async (command, tab) => {
   if (command !== "toggle-panel") return;
-  tab ??= (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
-  if (tab?.id) sendToTab(tab.id, { type: "toggle" }).catch(() => {});
+  togglePanel(tab ?? (await chrome.tabs.query({ active: true, currentWindow: true }))[0]);
 });
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {

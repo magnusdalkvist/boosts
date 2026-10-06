@@ -549,7 +549,7 @@
       h("div", { class: "titles" }, ui.name, ui.switcher),
       ui.enabled,
       iconBtn("minimize", "Minimize", () => setMinimized(true)),
-      iconBtn("close", "Close (Alt+Shift+B)", hide),
+      iconBtn("close", "Close (Alt+B)", hide),
     );
     ui.scope = h("div", { class: "scope" });
     ui.tabs = h("nav", { class: "tabs", role: "tablist" });
