@@ -13,6 +13,8 @@ JavaScript, saved per site or per page.
 ## Use
 
 Click the toolbar icon or press **Alt+B** on any page to open the floating panel.
+Drag the header to move it, drag any edge or corner to resize it, and use the
+expand button (or double-click the header) for a large editing size.
 
 - **Elements**: *Select element* (or right-click → *Boost this element*), then write
   HTML to insert before, at the start, at the end, after, or in place of it. Each

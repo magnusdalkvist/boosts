@@ -29,6 +29,8 @@
     openNew: "M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z",
     layers: "M11.99 18.54 4.62 12.81 3 14.07l9 7 9-7-1.63-1.27zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z",
     warn: "M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z",
+    expandAll: "M21 11V3h-8l3.29 3.29-10 10L3 13v8h8l-3.29-3.29 10-10z",
+    collapse: "M22 3.41 16.71 8.7 20 12h-8V4l3.29 3.29L20.59 2 22 3.41zM3.41 22l5.29-5.29L12 20v-8H4l3.29 3.29L2 20.59 3.41 22z",
     format: "M3 21h18v-2H3v2zm0-4h12v-2H3v2zm0-4h18v-2H3v2zm0-4h12V7H3v2zm0-6v2h18V3H3z",
   };
   const POSITIONS = [
@@ -177,7 +179,7 @@
 
   function highlight(lang, src) {
     const out = [];
-    const push = (cls, text) => text && out.push(cls ? h("span", { class: `t-${cls}` }, text) : document.createTextNode(text));
+    const push = (cls, text) => text && out.push([cls, text]);
     const re = RE[lang];
     re.lastIndex = 0;
     let at = 0;
@@ -223,6 +225,24 @@
     return globalThis.beautifier[lang](src, FORMAT_OPTIONS[lang]);
   }
 
+  /** Split highlight tokens into one block per source line, so long lines can
+      soft-wrap and each line carries its own (CSS-counter) line number. */
+  function renderLines(tokens) {
+    const lines = [];
+    let line = h("div", { class: "ln" });
+    for (const [cls, text] of tokens) {
+      text.split("\n").forEach((part, i) => {
+        if (i) {
+          lines.push(line);
+          line = h("div", { class: "ln" });
+        }
+        if (part) line.append(cls ? h("span", { class: `t-${cls}` }, part) : part);
+      });
+    }
+    lines.push(line);
+    return lines;
+  }
+
   // ---------------------------------------------------------------- code editor
 
   function insertText(ta, text) {
@@ -235,36 +255,25 @@
     }
   }
 
-  function createEditor({ lang, value, placeholder, onChange, onRun, grow = false, minLines = 5, maxLines = 16 }) {
+  function createEditor({ lang, value, placeholder, onChange, onRun, grow = false, minLines = 5 }) {
     const ta = h("textarea", {
       class: "ed-input",
       spellcheck: "false",
       autocomplete: "off",
       autocapitalize: "off",
-      wrap: "off",
       placeholder,
     });
     ta.value = value || "";
     const pre = h("pre", { class: "ed-hl", "aria-hidden": "true" });
-    const lines = h("div", { class: "ed-lines" });
+    // The textarea and the highlighted copy share one grid cell and wrap
+    // identically; the textarea never scrolls, the editor (or panel) does.
     const main = h("div", { class: "ed-main" }, pre, ta);
-    const el = h("div", { class: `ed${grow ? " ed-grow" : ""}` }, h("div", { class: "ed-gutter" }, lines), main);
-    let lineCount = 0;
+    const el = h("div", { class: `ed${grow ? " ed-grow" : ""}` }, main);
+    if (grow) main.style.minHeight = `${minLines * LINE_H + 20}px`;
 
     function paint() {
-      pre.replaceChildren(...highlight(lang, ta.value + "\n "));
-      const n = ta.value.split("\n").length;
-      if (n !== lineCount) {
-        lineCount = n;
-        lines.textContent = Array.from({ length: n }, (_, i) => i + 1).join("\n");
-        if (grow) main.style.height = `${Math.min(Math.max(n, minLines), maxLines) * LINE_H + 22}px`;
-      }
+      pre.replaceChildren(...renderLines(highlight(lang, ta.value)));
     }
-
-    ta.addEventListener("scroll", () => {
-      pre.style.transform = `translate(${-ta.scrollLeft}px, ${-ta.scrollTop}px)`;
-      lines.style.transform = `translateY(${-ta.scrollTop}px)`;
-    });
     ta.addEventListener("input", () => {
       paint();
       onChange?.(ta.value);
@@ -326,7 +335,7 @@
         ta.select();
         insertText(ta, out);
         ta.setSelectionRange(0, 0);
-        ta.scrollTop = 0;
+        main.scrollTop = 0;
       },
       get value() {
         return ta.value;
@@ -587,6 +596,7 @@
       h("div", { class: "brand" }, icon("bolt")),
       h("div", { class: "titles" }, ui.name, ui.switcher),
       ui.enabled,
+      (ui.expand = iconBtn("expandAll", "Expand", toggleExpanded)),
       iconBtn("minimize", "Minimize", () => setMinimized(true)),
       iconBtn("close", "Close (Alt+B)", hide),
     );
@@ -614,7 +624,9 @@
         btn("text small", "layers", "All boosts", () => chrome.runtime.sendMessage({ type: "openManager" })),
       ),
       ui.toast,
-      h("div", { class: "resize", title: "Resize", onpointerdown: startResize }),
+      ["n", "s", "e", "w", "ne", "nw", "se", "sw"].map((dir) =>
+        h("div", { class: `resize resize-${dir}`, "aria-hidden": "true", onpointerdown: (e) => startResize(e, dir) }),
+      ),
     );
     ui.fab = h("button", { class: "fab", type: "button", title: "Open Boosts", onclick: () => setMinimized(false) }, icon("bolt"));
 
@@ -625,6 +637,8 @@
       if (menu && !e.composedPath().some((n) => n === menu || n === ui.switcher)) closeMenu();
     });
     ui.header.addEventListener("pointerdown", startDrag);
+    ui.header.addEventListener("dblclick", (e) => !e.target.closest("button, input") && toggleExpanded());
+    renderExpand();
     addEventListener("scroll", redrawSoon, { capture: true, passive: true });
     addEventListener("resize", () => {
       applyGeometry();
@@ -684,28 +698,68 @@
     ui.header.addEventListener("pointercancel", up, { once: true });
   }
 
-  function startResize(e) {
+  const MIN_W = 340;
+  const MIN_H = 360;
+
+  /** Drag any edge or corner; `dir` is a compass direction like "w" or "se". */
+  function startResize(e, dir) {
+    if (e.button !== 0) return;
     e.preventDefault();
+    e.stopPropagation();
     const handle = e.currentTarget;
-    const sx = e.clientX - prefs.w;
-    const sy = e.clientY - prefs.h;
+    const r = ui.panel.getBoundingClientRect();
+    const start = { x: e.clientX, y: e.clientY, l: r.left, t: r.top, w: r.width, h: r.height };
     handle.setPointerCapture(e.pointerId);
+    ui.panel.classList.add("dragging");
+    prefs.expanded = null;
+    renderExpand();
     const move = (ev) => {
-      prefs.w = ev.clientX - sx;
-      prefs.h = ev.clientY - sy;
+      const dx = ev.clientX - start.x;
+      const dy = ev.clientY - start.y;
+      if (dir.includes("e")) prefs.w = Math.min(Math.max(start.w + dx, MIN_W), innerWidth - start.l - 8);
+      if (dir.includes("s")) prefs.h = Math.min(Math.max(start.h + dy, MIN_H), innerHeight - start.t - 8);
+      if (dir.includes("w")) {
+        prefs.w = Math.min(Math.max(start.w - dx, MIN_W), start.l + start.w - 8);
+        prefs.x = start.l + start.w - prefs.w;
+      }
+      if (dir.includes("n")) {
+        prefs.h = Math.min(Math.max(start.h - dy, MIN_H), start.t + start.h - 8);
+        prefs.y = start.t + start.h - prefs.h;
+      }
       applyGeometry();
     };
+    const up = () => {
+      handle.removeEventListener("pointermove", move);
+      ui.panel.classList.remove("dragging");
+      savePrefs();
+    };
     handle.addEventListener("pointermove", move);
-    handle.addEventListener(
-      "pointerup",
-      () => {
-        handle.removeEventListener("pointermove", move);
-        prefs.w = parseFloat(ui.panel.style.width);
-        prefs.h = parseFloat(ui.panel.style.height);
-        savePrefs();
-      },
-      { once: true },
-    );
+    handle.addEventListener("pointerup", up, { once: true });
+    handle.addEventListener("pointercancel", up, { once: true });
+  }
+
+  /** Toggle a big editing size; remembers the previous geometry to go back to. */
+  function toggleExpanded() {
+    if (prefs.expanded) {
+      Object.assign(prefs, prefs.expanded);
+      prefs.expanded = null;
+    } else {
+      prefs.expanded = { x: prefs.x, y: prefs.y, w: prefs.w, h: prefs.h };
+      prefs.w = Math.min(960, innerWidth - 32);
+      prefs.h = innerHeight - 32;
+      prefs.x = innerWidth - prefs.w - 16;
+      prefs.y = 16;
+    }
+    applyGeometry();
+    renderExpand();
+    savePrefs();
+  }
+
+  function renderExpand() {
+    const big = !!prefs.expanded;
+    ui.expand.replaceChildren(icon(big ? "collapse" : "expandAll"));
+    ui.expand.title = big ? "Restore size" : "Expand";
+    ui.expand.setAttribute("aria-label", ui.expand.title);
   }
 
   async function show() {
