@@ -356,7 +356,8 @@
     if (B.picking || e.button > 1) return;
     const a = e.composedPath().find((n) => n instanceof HTMLAnchorElement && n.href);
     if (!a?.closest("[data-boost-node]") || !a.closest("[data-boost-link]")) return;
-    if (/^javascript:/i.test(a.getAttribute("href") || "")) return;
+    // Only real navigations; never javascript:, data: or other schemes.
+    if (!["http:", "https:"].includes(a.protocol)) return;
     if (e.type === "auxclick" && e.button !== 1) return;
     setTimeout(() => {
       if (!e.defaultPrevented) return; // the browser already followed it

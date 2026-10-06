@@ -160,6 +160,16 @@ $("#file").addEventListener("change", async (e) => {
   try {
     const data = JSON.parse(await file.text());
     const list = (Array.isArray(data) ? data : data.boosts || []).filter((b) => b?.id && b.host);
+    // Imported scripts run with full access to the sites they target.
+    const scripted = list.filter((b) => b.js?.trim() || b.rules?.some((r) => r.js?.trim()));
+    if (
+      scripted.length &&
+      !confirm(
+        `${scripted.length} of these boosts run JavaScript on:\n\n${[...new Set(scripted.map((b) => b.host))].join("\n")}\n\n` +
+          "Scripts can read and change everything on those sites, including your accounts there. Only import boosts from people you trust. Import?",
+      )
+    )
+      return;
     const now = Date.now();
     await chrome.storage.local.set(
       Object.fromEntries(list.map((b) => [PREFIX + b.id, { rules: [], zaps: [], css: "", js: "", scope: "site", enabled: true, createdAt: now, ...b, updatedAt: now }])),
